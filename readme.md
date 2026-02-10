@@ -120,15 +120,17 @@ push notification, php, javascript ...
 ```
 [Flux](https://facebook.github.io/flux/docs/in-depth-overview.html#content) 
 ```
-## [O que é a fonte única da verdade?](https://www.schoolofnet.com/curso-vue-20-com-vuex/2280)
+## O que é a fonte única da verdade?
 ```
-Imagine que você irá estruturar todas as suas informações, da aplicação, e concentrará em um único lugar. Constumamos falar que este local será um "armazém". Quem precisar alterar qualquer informação, deverá acessar este armazém. Não irá alterar direto no componente ou qualquer outro local que esteja, pois eles serão, somente, referência. O mais importante é que, todas informações só terão acesso, tanto para listagem quanto para alterações, em um único lugar. Tudo centralizado.
+O Conceito (Analogia do Armazém):
+Imagine estruturar todas as informações da aplicação concentrando-as em um único lugar, que chamaremos de "Armazém". Neste modelo, os componentes visuais não retêm dados próprios; eles funcionam apenas como referência.
 
-Se eu modificar alguma coisa no armazém, todos que buscarem informações nele, já terão uma resposta atualizada, porque a fonte é única. Os componentes deixarão de ter informações próprias. Eles buscarão estas informações no armazém. Algumas informações, menores, podem ainda, continuar por responsabilidade do componente, mas as informações principais, serão capturadas do armazém.
+A regra é clara: qualquer alteração de informação deve ser feita exclusivamente neste Armazém. Como o acesso é centralizado, se modificarmos algo no Armazém, todos os componentes que consomem esses dados receberão a resposta atualizada instantaneamente.
 
-Imaginem que exista uma biblioteca que todos componentes precisem consultar, para ter qualquer informação, porque todas as informações importantes, estão nela e somente nela.
+É como uma biblioteca central: todos os componentes precisam consultá-la para obter informações, pois os dados oficiais residem nela e somente nela. Componentes podem até manter estados locais para interações menores, mas os dados vitais do negócio são sempre capturados dessa fonte principal.
 
-Este conceito de fonte única da verdade é muito utilizado em bancos de dados relacionais. Quando criamos uma tabela de pedidos e temos um cliente relacionado, nós apenas criamos um apontamento deste cliente, para a tabela de clientes, não estamos duplicando as informações. Deste modo, temos o id do cliente, relacionado ao pedido. Quando consultarmos, sempre teremos as fontes atualizadas, caso algué...
+Analogia Técnica:
+Este conceito é amplamente utilizado em bancos de dados relacionais. Por exemplo, ao criarmos uma tabela de pedidos, não duplicamos os dados do cliente em cada venda; apenas criamos um apontamento (chave estrangeira) para a tabela de clientes. Assim, mantemos o ID vinculado e, caso alguém atualize o cadastro do cliente na origem, todas as consultas de pedidos refletirão essa mudança automaticamente, garantindo a integridade dos dados.
 ```
 
  ## Push Notificantion

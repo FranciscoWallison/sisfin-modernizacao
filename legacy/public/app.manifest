@@ -1,0 +1,26 @@
+{
+  "name": "SisFin",
+  "start_url": "https://intense-dawn-46739.herokuapp.com/app#!/login",
+  "display": "standalone",
+  "related_applications": [{
+    "platform": "web"
+  }],
+  "icons": [
+    {
+      "src": "img/pwa/ceep-logo-256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "img/pwa/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "img/pwa/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+
+  ]
+}

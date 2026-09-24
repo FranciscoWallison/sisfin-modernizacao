@@ -1,0 +1,102 @@
+
+// Fonts
+@import url(https://fonts.googleapis.com/icon?family=Material+Icons);
+
+// Materialize CSS
+@import "node_modules/materialize-css/sass/components/color";
+
+// Variables
+@import "variables";
+
+// Materialize CSS
+@import "node_modules/materialize-css/sass/materialize";
+
+// Select2 CSS
+//@import "node_modules/select2/dist/css/select2";
+
+// Default sass
+@import "../../_default/sass/_default";
+
+// Select2 materialize css
+@import "../../_default/sass/select2-materialize";
+
+body{
+	background-color: color('green', 'lighten-5');
+}
+
+.preloader-background {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #eee;
+    
+    position: fixed;
+  	z-index: 1004;
+    opacity: 0.7;
+    background: #000;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;  
+}
+
+.filter-group{
+    .btn{
+        float: right;
+        height: 3rem;
+        line-height: 3rem;
+    }
+    .filter-wrapper{
+        overflow: hidden;
+        padding-right: 10px;
+    }
+}
+
+.category-tree{
+    @extend .collection;
+    border: none;
+    margin: 0;
+    overflow: visible;
+
+    .category-child{
+        @extend .collection-item;
+        padding-left: 50px;
+    }
+
+    .category-symbol{
+        line-height: 36px;
+        height: 36px;
+
+        i{
+            line-heught: inherit;
+            height: inherit;
+        }
+    }
+}
+
+.label-error{
+  width: 100%;
+  &:after{
+    content: attr(data-error);
+    color: $input-error-color;
+    opacity: 1;
+    display: block;
+    position: absolute;
+    top: 55px;
+    transition: .2s opacity ease-out, .2s color ease-out;
+  }
+}
+.select2-invalid{
+  border-bottom: $input-invalid-border !important;
+  box-shadow: 0 1px 0 0 $input-error-color;
+}
+
+.container-sisfin{
+    @extend .container;
+    width: 95%;
+    max-width: 1365px;
+}
+
+.ac-appender{
+  display: none;
+}

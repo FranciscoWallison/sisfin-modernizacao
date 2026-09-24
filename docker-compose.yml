@@ -1,0 +1,51 @@
+# Sobe o ORÁCULO (sistema legado). O TO-BE (api/ e web/) entra aqui depois, lado a lado.
+services:
+  legacy-db:
+    image: mysql:5.7
+    platform: linux/amd64
+    environment:
+      MYSQL_DATABASE: sisfin
+      MYSQL_USER: sisfin
+      MYSQL_PASSWORD: sisfin
+      MYSQL_ROOT_PASSWORD: root
+    ports: ["33061:3306"]
+    volumes: [legacy-db:/var/lib/mysql]
+
+  legacy-app:
+    build:
+      context: .
+      dockerfile: docker/legacy/Dockerfile
+    depends_on: [legacy-db]
+    ports: ["8081:80"]
+    environment:
+      LEGACY_SEED: "1"
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8081
+      # Chaves SÓ de desenvolvimento local — o oráculo não é exposto
+      APP_KEY: base64:c2lzZmluLWxlZ2Fkby1vcmFjdWxvLWxvY2FsLTAwMDA=
+      JWT_SECRET: sisfin-legado-oraculo-somente-local
+      DB_CONNECTION: mysql
+      DB_HOST: legacy-db
+      DB_PORT: "3306"
+      DB_DATABASE: sisfin
+      DB_USERNAME: sisfin
+      DB_PASSWORD: sisfin
+      BROADCAST_DRIVER: log
+      CACHE_DRIVER: file
+      SESSION_DRIVER: file
+      QUEUE_DRIVER: sync
+      MAIL_DRIVER: log
+      IUGU_API_KEY: ""
+      PUSHER_APP_ID: ""
+      PUSHER_KEY: ""
+      PUSHER_SECRET: ""
+      URL_ADMIN_LOGIN: /admin/login
+      URL_ADMIN_LOGOUT: /admin/logout
+      URL_SITE_LOGIN: /login
+      URL_SITE_LOGOUT: /logout
+      BANK_LOGO_DEFAULT: default.jpg
+      API_URL: http://localhost:8081/api
+
+volumes:
+  legacy-db:

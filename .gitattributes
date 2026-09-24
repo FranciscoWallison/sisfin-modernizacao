@@ -1,0 +1,4 @@
+# Scripts executados dentro de containers Linux precisam de LF
+*.sh   text eol=lf
+Dockerfile text eol=lf
+*.conf text eol=lf

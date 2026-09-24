@@ -19,6 +19,7 @@ services:
     ports: ["8081:80"]
     environment:
       LEGACY_SEED: "1"
+      LEGACY_SEED_VALUE: "42"
       APP_ENV: local
       APP_DEBUG: "true"
       APP_URL: http://localhost:8081

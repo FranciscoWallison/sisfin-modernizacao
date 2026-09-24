@@ -1,0 +1,93 @@
+{
+  "rn": [
+    "RN-CON-010"
+  ],
+  "descricao": "Excluir uma conta paga não estorna o saldo (bug do legado — DUV-CON-004).",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "categoria",
+      "rota": "/api/category_expenses",
+      "salvar": {
+        "categoria": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "conta_bancaria",
+      "rota": "/api/bank_accounts",
+      "salvar": {
+        "conta": "data.0.id",
+        "saldo_0": "data.0.balance"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "criar_paga",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-010-{{execucao}}",
+        "date_due": "2027-05-01",
+        "value": 10,
+        "done": true,
+        "category_id": "{{categoria}}",
+        "bank_account_id": "{{conta}}"
+      },
+      "salvar": {
+        "conta_pagar": "data.id"
+      }
+    },
+    {
+      "nome": "saldo_1",
+      "rota": "/api/bank_accounts/{{conta}}",
+      "salvar": {
+        "saldo_1": "data.balance"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "excluir",
+      "metodo": "DELETE",
+      "rota": "/api/bill_pays/{{conta_pagar}}"
+    },
+    {
+      "nome": "ler_excluida",
+      "rota": "/api/bill_pays/{{conta_pagar}}"
+    },
+    {
+      "nome": "saldo_2",
+      "rota": "/api/bank_accounts/{{conta}}",
+      "salvar": {
+        "saldo_2": "data.balance"
+      },
+      "registrar": false
+    }
+  ],
+  "derivar": {
+    "delta_criar_paga": "saldo_1 - saldo_0",
+    "delta_excluir": "saldo_2 - saldo_1"
+  },
+  "esperado": {
+    "criar_paga": {
+      "status": 201
+    },
+    "excluir": {
+      "status": 204
+    },
+    "ler_excluida": {
+      "status": 404
+    },
+    "delta_criar_paga": -10,
+    "delta_excluir": 0
+  },
+  "capturado": {
+    "em": "2026-09-24",
+    "de": "http://localhost:8081"
+  }
+}

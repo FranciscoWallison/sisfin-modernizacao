@@ -1,0 +1,120 @@
+{
+  "rn": [
+    "RN-CON-006"
+  ],
+  "descricao": "Conta a pagar criada já paga debita o saldo na criação; com repetição, observa se as cópias também debitam (DUV-CON-002).",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "categoria",
+      "rota": "/api/category_expenses",
+      "salvar": {
+        "categoria": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "conta_bancaria",
+      "rota": "/api/bank_accounts",
+      "salvar": {
+        "conta": "data.0.id",
+        "saldo_0": "data.0.balance"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "criar_paga",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-006A-{{execucao}}",
+        "date_due": "2027-02-05",
+        "value": 10,
+        "done": true,
+        "category_id": "{{categoria}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "saldo_1",
+      "rota": "/api/bank_accounts/{{conta}}",
+      "salvar": {
+        "saldo_1": "data.balance"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "criar_paga_com_repeticao",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-006B-{{execucao}}",
+        "date_due": "2027-02-05",
+        "value": 10,
+        "done": true,
+        "repeat": true,
+        "repeat_number": 2,
+        "repeat_type": 1,
+        "category_id": "{{categoria}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "saldo_2",
+      "rota": "/api/bank_accounts/{{conta}}",
+      "salvar": {
+        "saldo_2": "data.balance"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "copias",
+      "rota": "/api/bill_pays?search=PAR-006B-{{execucao}}&searchFields=name:like&orderBy=date_due&sortedBy=asc",
+      "caminho": "data.bills.data",
+      "campos": [
+        "date_due",
+        "done"
+      ]
+    }
+  ],
+  "derivar": {
+    "delta_criar_paga": "saldo_1 - saldo_0",
+    "delta_criar_paga_com_repeticao": "saldo_2 - saldo_1"
+  },
+  "esperado": {
+    "criar_paga": {
+      "status": 201
+    },
+    "criar_paga_com_repeticao": {
+      "status": 201
+    },
+    "copias": {
+      "status": 200,
+      "corpo": [
+        {
+          "date_due": "2027-02-05",
+          "done": true
+        },
+        {
+          "date_due": "2027-03-05",
+          "done": true
+        },
+        {
+          "date_due": "2027-04-05",
+          "done": true
+        }
+      ]
+    },
+    "delta_criar_paga": -10,
+    "delta_criar_paga_com_repeticao": -30
+  },
+  "capturado": {
+    "em": "2026-09-24",
+    "de": "http://localhost:8081"
+  }
+}

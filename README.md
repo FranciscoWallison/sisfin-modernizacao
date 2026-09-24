@@ -44,18 +44,31 @@ curl -X POST http://localhost:8081/api/access_token \
 ```
 
 - App: http://localhost:8081 · MySQL: `localhost:33061` (`sisfin`/`sisfin`)
-- Resetar os dados: `docker compose down -v && docker compose up -d`
+- Resetar os dados: `docker compose down -v && docker compose up -d` (seed determinístico, semente 42)
+
+## Paridade (golden master)
+
+```bash
+node tools/paridade.mjs                                   # compara com o esperado (legado em :8081)
+node tools/paridade.mjs --capturar RN-CON-009             # regrava o esperado de um caso a partir do legado
+node tools/paridade.mjs --base http://localhost:3000      # mesmos casos contra o sistema novo
+```
+
+Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios dados, guardam variáveis
+(`salvar`), projetam só os campos relevantes (`caminho` + `campos`) e verificam efeitos por **deltas**
+(`derivar`), então rodam repetidamente e contra qualquer implementação.
 
 ## Progresso
 
 | Módulo | AS-IS | Paridade | TO-BE | Implementado |
 |---|---|---|---|---|
-| contas | 🟡 12 regras, 7 dúvidas | 🟡 1 caso | ⚪ | ⚪ |
+| contas | 🟡 12 regras, 7 dúvidas | 🟡 6 casos (9 regras) | ⚪ | ⚪ |
 | categorias · contas-bancarias · bancos · fluxo-de-caixa · assinaturas · auth | ⚪ | ⚪ | ⚪ | ⚪ |
 
 ### Achados até agora (pelas sondas no oráculo)
 
 - **RN-CON-009** — mover uma conta paga para outra conta bancária não move o saldo.
 - **RN-CON-010** — excluir uma conta paga não estorna o saldo e deixa extrato órfão.
+- **RN-CON-006** — conta criada paga com repetição: todas as parcelas futuras nascem pagas e debitam o saldo hoje.
 - **RN-CON-011** — dinheiro armazenado em `FLOAT`.
 - **RN-CON-012** — `->defalt(false)` numa migration: erro de digitação que o Laravel 5.3 aceitou em silêncio.

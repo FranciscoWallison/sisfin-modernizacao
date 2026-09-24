@@ -1,44 +1,91 @@
 {
-  "rn": ["RN-CON-001", "RN-CON-002"],
+  "rn": [
+    "RN-CON-001",
+    "RN-CON-002"
+  ],
   "descricao": "Conta a pagar mensal com repeat_number=3 a partir de 31/01 gera 4 contas com vencimento ajustado ao fim do mês",
-  "setup": {
-    "usuario": { "email": "cliente1@user.com", "password": "secret" },
-    "variaveis": {
-      "category_id": "primeira categoria de despesa do tenant (GET /api/category_expenses)",
-      "bank_account_id": "primeira conta bancária do tenant (GET /api/bank_accounts)"
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
     }
   },
   "passos": [
     {
+      "nome": "categoria",
+      "rota": "/api/category_expenses",
+      "salvar": {
+        "categoria": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "conta_bancaria",
+      "rota": "/api/bank_accounts",
+      "salvar": {
+        "conta": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "criar",
       "metodo": "POST",
       "rota": "/api/bill_pays",
       "corpo": {
-        "name": "PARIDADE-RN-CON-001",
+        "name": "PAR-001-{{execucao}}",
         "date_due": "2027-01-31",
         "value": 10,
         "done": false,
         "repeat": true,
         "repeat_number": 3,
         "repeat_type": 1,
-        "category_id": "{{category_id}}",
-        "bank_account_id": "{{bank_account_id}}"
+        "category_id": "{{categoria}}",
+        "bank_account_id": "{{conta}}"
       }
+    },
+    {
+      "nome": "listar",
+      "rota": "/api/bill_pays?search=PAR-001-{{execucao}}&searchFields=name:like&orderBy=date_due&sortedBy=asc",
+      "caminho": "data.bills.data",
+      "campos": [
+        "date_due",
+        "value",
+        "done"
+      ]
     }
   ],
-  "verificar": {
-    "http_status": 200,
-    "sql": "SELECT date_due, value, done FROM bill_pays WHERE name = 'PARIDADE-RN-CON-001' ORDER BY date_due"
-  },
-  "ignorar": ["id", "created_at", "updated_at"],
   "esperado": {
-    "http_status": 200,
-    "linhas": [
-      { "date_due": "2027-01-31", "value": 10, "done": 0 },
-      { "date_due": "2027-02-28", "value": 10, "done": 0 },
-      { "date_due": "2027-03-31", "value": 10, "done": 0 },
-      { "date_due": "2027-04-30", "value": 10, "done": 0 }
-    ]
+    "criar": {
+      "status": 201
+    },
+    "listar": {
+      "status": 200,
+      "corpo": [
+        {
+          "date_due": "2027-01-31",
+          "value": 10,
+          "done": false
+        },
+        {
+          "date_due": "2027-02-28",
+          "value": 10,
+          "done": false
+        },
+        {
+          "date_due": "2027-03-31",
+          "value": 10,
+          "done": false
+        },
+        {
+          "date_due": "2027-04-30",
+          "value": 10,
+          "done": false
+        }
+      ]
+    }
   },
-  "capturado_em": "2026-09-24",
-  "capturado_de": "legacy (docker compose, Laravel 5.3.18 / PHP 7.1.33)"
+  "capturado": {
+    "em": "2026-09-24",
+    "de": "http://localhost:8081"
+  }
 }

@@ -1,0 +1,119 @@
+{
+  "rn": [
+    "RN-CON-008"
+  ],
+  "descricao": "Conta criada por um usuário do cliente 2 é visível para outro usuário do mesmo cliente e responde 404 (não 403) para usuário de outro cliente, inclusive em PUT e DELETE.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    },
+    "mesmo_cliente": {
+      "email": "cliente2@user.com",
+      "password": "secret"
+    },
+    "outro_cliente": {
+      "email": "cliente3@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "categoria",
+      "rota": "/api/category_expenses",
+      "salvar": {
+        "categoria": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "conta_bancaria",
+      "rota": "/api/bank_accounts",
+      "salvar": {
+        "conta": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "criar",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-008-{{execucao}}",
+        "date_due": "2027-03-01",
+        "value": 10,
+        "done": false,
+        "category_id": "{{categoria}}",
+        "bank_account_id": "{{conta}}"
+      },
+      "salvar": {
+        "conta_pagar": "data.id"
+      }
+    },
+    {
+      "nome": "ler_mesmo_cliente",
+      "usuario": "mesmo_cliente",
+      "rota": "/api/bill_pays/{{conta_pagar}}"
+    },
+    {
+      "nome": "ler_outro_cliente",
+      "usuario": "outro_cliente",
+      "rota": "/api/bill_pays/{{conta_pagar}}"
+    },
+    {
+      "nome": "alterar_outro_cliente",
+      "usuario": "outro_cliente",
+      "metodo": "PUT",
+      "rota": "/api/bill_pays/{{conta_pagar}}",
+      "corpo": {
+        "name": "INVADIDO",
+        "date_due": "2027-03-01",
+        "value": 999,
+        "done": true
+      }
+    },
+    {
+      "nome": "excluir_outro_cliente",
+      "usuario": "outro_cliente",
+      "metodo": "DELETE",
+      "rota": "/api/bill_pays/{{conta_pagar}}"
+    },
+    {
+      "nome": "conta_intacta",
+      "rota": "/api/bill_pays/{{conta_pagar}}",
+      "caminho": "data",
+      "campos": [
+        "value",
+        "done"
+      ]
+    }
+  ],
+  "esperado": {
+    "criar": {
+      "status": 201
+    },
+    "ler_mesmo_cliente": {
+      "status": 200
+    },
+    "ler_outro_cliente": {
+      "status": 404
+    },
+    "alterar_outro_cliente": {
+      "status": 404
+    },
+    "excluir_outro_cliente": {
+      "status": 404
+    },
+    "conta_intacta": {
+      "status": 200,
+      "corpo": {
+        "value": 10,
+        "done": false
+      }
+    }
+  },
+  "capturado": {
+    "em": "2026-09-24",
+    "de": "http://localhost:8081"
+  }
+}

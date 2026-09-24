@@ -1,0 +1,192 @@
+{
+  "rn": [
+    "RN-CON-003",
+    "RN-CON-004",
+    "RN-CON-005"
+  ],
+  "descricao": "Ciclo de uma conta a pagar: criar em aberto (sem efeito), pagar (-10), alterar valor paga (-15), desmarcar (+25). O saldo volta ao inicial e cada movimento gera extrato.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "categoria",
+      "rota": "/api/category_expenses",
+      "salvar": {
+        "categoria": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "conta_bancaria",
+      "rota": "/api/bank_accounts",
+      "salvar": {
+        "conta": "data.0.id",
+        "saldo_0": "data.0.balance"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "criar_em_aberto",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-003-{{execucao}}",
+        "date_due": "2027-01-10",
+        "value": 10,
+        "done": false,
+        "category_id": "{{categoria}}",
+        "bank_account_id": "{{conta}}"
+      },
+      "salvar": {
+        "conta_pagar": "data.id"
+      }
+    },
+    {
+      "nome": "saldo_1",
+      "rota": "/api/bank_accounts/{{conta}}",
+      "salvar": {
+        "saldo_1": "data.balance"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "pagar",
+      "metodo": "PUT",
+      "rota": "/api/bill_pays/{{conta_pagar}}",
+      "corpo": {
+        "name": "PAR-003-{{execucao}}",
+        "date_due": "2027-01-10",
+        "value": 10,
+        "done": true,
+        "category_id": "{{categoria}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "saldo_2",
+      "rota": "/api/bank_accounts/{{conta}}",
+      "salvar": {
+        "saldo_2": "data.balance"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "extrato_apos_pagar",
+      "rota": "/api/statements?orderBy=id&sortedBy=desc",
+      "caminho": "data.statements.data.0",
+      "campos": [
+        "value"
+      ]
+    },
+    {
+      "nome": "alterar_valor_paga",
+      "metodo": "PUT",
+      "rota": "/api/bill_pays/{{conta_pagar}}",
+      "corpo": {
+        "name": "PAR-003-{{execucao}}",
+        "date_due": "2027-01-10",
+        "value": 25,
+        "done": true,
+        "category_id": "{{categoria}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "saldo_3",
+      "rota": "/api/bank_accounts/{{conta}}",
+      "salvar": {
+        "saldo_3": "data.balance"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "extrato_apos_alterar",
+      "rota": "/api/statements?orderBy=id&sortedBy=desc",
+      "caminho": "data.statements.data.0",
+      "campos": [
+        "value"
+      ]
+    },
+    {
+      "nome": "desmarcar",
+      "metodo": "PUT",
+      "rota": "/api/bill_pays/{{conta_pagar}}",
+      "corpo": {
+        "name": "PAR-003-{{execucao}}",
+        "date_due": "2027-01-10",
+        "value": 25,
+        "done": false,
+        "category_id": "{{categoria}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "saldo_4",
+      "rota": "/api/bank_accounts/{{conta}}",
+      "salvar": {
+        "saldo_4": "data.balance"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "extrato_apos_desmarcar",
+      "rota": "/api/statements?orderBy=id&sortedBy=desc",
+      "caminho": "data.statements.data.0",
+      "campos": [
+        "value"
+      ]
+    }
+  ],
+  "derivar": {
+    "delta_criar_em_aberto": "saldo_1 - saldo_0",
+    "delta_pagar": "saldo_2 - saldo_1",
+    "delta_alterar_valor_paga": "saldo_3 - saldo_2",
+    "delta_desmarcar": "saldo_4 - saldo_3",
+    "saldo_voltou_ao_inicial": "saldo_4 === saldo_0"
+  },
+  "esperado": {
+    "criar_em_aberto": {
+      "status": 201
+    },
+    "pagar": {
+      "status": 200
+    },
+    "extrato_apos_pagar": {
+      "status": 200,
+      "corpo": {
+        "value": -10
+      }
+    },
+    "alterar_valor_paga": {
+      "status": 200
+    },
+    "extrato_apos_alterar": {
+      "status": 200,
+      "corpo": {
+        "value": -15
+      }
+    },
+    "desmarcar": {
+      "status": 200
+    },
+    "extrato_apos_desmarcar": {
+      "status": 200,
+      "corpo": {
+        "value": 25
+      }
+    },
+    "delta_criar_em_aberto": 0,
+    "delta_pagar": -10,
+    "delta_alterar_valor_paga": -15,
+    "delta_desmarcar": 25,
+    "saldo_voltou_ao_inicial": true
+  },
+  "capturado": {
+    "em": "2026-09-24",
+    "de": "http://localhost:8081"
+  }
+}

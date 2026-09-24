@@ -33,14 +33,15 @@
 ### RN-CON-005 — Desmarcar pagamento estorna o valor antigo
 - **Regra:** quando `done` passa de `true` para `false`, o saldo recebe **+valor antigo** (a pagar) ou **−valor antigo** (a receber).
 - **Evidência:** `legacy/app/Listeners/BankAccountUpdateBalanceListener.php:74-75`
-- **Sonda:** pendente
-- **Confiança:** média (só código)
+- **Sonda:** conta paga de 25,00 desmarcada → saldo +25; extrato `value=25`; saldo volta ao inicial ✅ (`paridade/contas/RN-CON-003-a-005-ciclo-do-saldo.json`)
+- **Confiança:** alta
 
 ### RN-CON-006 — Conta criada já paga movimenta o saldo na criação
 - **Regra:** na criação não há modelo anterior; `doneOld` é tratado como `false`, então uma conta criada com `done=true` já debita/credita o saldo.
 - **Evidência:** `legacy/app/Listeners/BankAccountUpdateBalanceListener.php:63-64` + `:71-73`
-- **Sonda:** pendente
-- **Confiança:** média · combinação com repetição → DUV-CON-002
+- **Sonda:** criada paga com 10,00 → saldo −10 ✅. Criada paga com `repeat_number=2` → 3 contas, **todas pagas**, saldo −30 ✅ (`paridade/contas/RN-CON-006-criar-ja-paga.json`)
+- **Confiança:** alta
+- **Suspeita de bug?** sim, na combinação com repetição: parcelas futuras nascem pagas e já debitam o saldo hoje (DUV-CON-002)
 
 ### RN-CON-007 — Atualização do saldo é atômica e com lock; o extrato fica fora da transação
 - **Regra:** `addBalance` abre transação e trava a linha da conta bancária antes de somar; o `Statement` é criado depois do commit.

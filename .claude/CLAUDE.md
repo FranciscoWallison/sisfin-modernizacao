@@ -16,7 +16,8 @@ Processo: engenharia reversa (AS-IS) → spec (TO-BE) → implementação por ta
 4. Afirmação sobre o legado sem `legacy/<arquivo>:<linha>` (ou sonda reproduzível) é hipótese → vai para `duvidas.md`.
 5. Todo requisito em `.specs/novo/` tem `Origem: RN-...` (ou `Origem: nova`) e `Decisão: manter | corrigir | descartar`.
 6. Não implemente task de um `tasks.md` que não esteja com `Status: aprovado`.
-7. Regra migrada = caso de paridade em `.specs/paridade/<mod>/` passando contra o legado E contra o novo.
+7. Regra migrada = caso de paridade em `.specs/paridade/<mod>/` passando contra o legado E contra o novo
+   (`node tools/paridade.mjs` e `node tools/paridade.mjs --base <url-do-novo>`).
 8. Decisão de corrigir/descartar comportamento do legado vira ADR em `.specs/decisoes/`.
 9. Rode `node tools/rastreabilidade.mjs` antes de abrir PR: não pode haver regra sem requisito nem requisito sem teste.
 

@@ -22,6 +22,8 @@ COPY legacy/composer.json legacy/composer.lock ./
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-interaction
 
 COPY legacy/ ./
+# Seeder determinístico mora fora de legacy/ (o oráculo não é editado)
+COPY docker/legacy/seeds/DeterministicSeeder.php database/seeds/
 RUN composer dump-autoload --optimize --no-dev \
  && chown -R www-data:www-data storage bootstrap/cache
 

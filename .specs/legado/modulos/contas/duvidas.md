@@ -3,12 +3,12 @@
 | ID | Dúvida | Evidência | Sonda proposta | Quem responde | Status |
 |---|---|---|---|---|---|
 | DUV-CON-001 | "Repetir N vezes" deveria gerar N ou N+1 contas? O que a tela do SPA mostra ao usuário? | RN-CON-001 | Ler o formulário em `legacy/resources/assets/spa/js/components/bill/` | Francisco (autor/PO) | ⏳ aberta |
-| DUV-CON-002 | Conta criada **já paga** e com repetição: todas as cópias nascem pagas e debitam o saldo? | `BillRepositoryTrait.php:21-24` (cópias herdam `done`) + RN-CON-006 | `POST` com `done=true, repeat_number=2` e conferir o saldo | Sonda | ⏳ aberta |
+| DUV-CON-002 | Conta criada **já paga** e com repetição: todas as cópias nascem pagas e debitam o saldo? | `BillRepositoryTrait.php:21-24` (cópias herdam `done`) + RN-CON-006 | `POST` com `done=true, repeat_number=2` e conferir o saldo | Sonda | ✅ **sim**: 3 contas pagas, saldo −30. ⏳ Francisco decide: é bug (só a 1ª deveria nascer paga)? |
 | DUV-CON-003 | Mover conta paga entre contas bancárias sem mover o saldo (RN-CON-009) é bug? | RN-CON-009 | — (confirmado por sonda) | Francisco | ⏳ decidir: corrigir? |
 | DUV-CON-004 | Excluir conta paga sem estornar (RN-CON-010) é bug? E o que fazer com o extrato: apagar, estornar ou bloquear a exclusão? | RN-CON-010 | — (confirmado por sonda) | Francisco | ⏳ decidir |
 | DUV-CON-005 | Já houve divergência saldo × extrato em produção? (extrato criado fora da transação) | RN-CON-007 | Somar `statements.value` por conta e comparar com `balance` no banco seed | Sonda | ⏳ aberta |
-| DUV-CON-006 | Usuário **sem** `client` (ex.: admin do seed) chamando a API: o landlord deixa de filtrar e ele vê tudo? | `AddCliebtTenantMiddleware.php:21-23` | Login como `admin@user.com` e `GET /api/bill_pays` | Sonda | ⏳ aberta |
-| DUV-CON-007 | O seed usa Faker sem semente fixa — os dados mudam a cada `migrate --seed`. Fixar semente para o golden master? | `legacy/database/seeds/*` | — | Francisco | ⏳ aberta |
+| DUV-CON-006 | Usuário **sem** `client` chamando a API: o landlord deixa de filtrar e ele vê tudo? (No seed, até o admin tem `client_id`; mas `users.client_id` é `NULL`-able.) | `AddCliebtTenantMiddleware.php:21-23` | Inserir via SQL um usuário com `client_id NULL`, logar e `GET /api/bill_pays` | Sonda | ⏳ aberta |
+| DUV-CON-007 | O seed usa Faker sem semente fixa — os dados mudam a cada `migrate --seed`. | `legacy/database/seeds/*` | — | — | ✅ resolvida: `docker/legacy/seeds/DeterministicSeeder.php` fixa `mt_srand`/Faker (seed 42) sem editar o legado. Limite: datas do Faker são relativas ao dia do seed — os casos de paridade usam deltas e dados próprios, nunca valores do seed |
 
 ## Achados fora do módulo (para o inventário / security-reviewer)
 

@@ -1,0 +1,110 @@
+{
+  "rn": [
+    "RN-CON-009"
+  ],
+  "descricao": "Mover uma conta paga para outra conta bancária não altera o saldo de nenhuma das duas (bug do legado — DUV-CON-003).",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "categoria",
+      "rota": "/api/category_expenses",
+      "salvar": {
+        "categoria": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "contas_bancarias",
+      "rota": "/api/bank_accounts",
+      "salvar": {
+        "conta_a": "data.0.id",
+        "conta_b": "data.1.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "criar_paga_em_a",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-009-{{execucao}}",
+        "date_due": "2027-04-01",
+        "value": 10,
+        "done": true,
+        "category_id": "{{categoria}}",
+        "bank_account_id": "{{conta_a}}"
+      },
+      "salvar": {
+        "conta_pagar": "data.id"
+      }
+    },
+    {
+      "nome": "saldo_a_antes",
+      "rota": "/api/bank_accounts/{{conta_a}}",
+      "salvar": {
+        "a0": "data.balance"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "saldo_b_antes",
+      "rota": "/api/bank_accounts/{{conta_b}}",
+      "salvar": {
+        "b0": "data.balance"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "mover_para_b",
+      "metodo": "PUT",
+      "rota": "/api/bill_pays/{{conta_pagar}}",
+      "corpo": {
+        "name": "PAR-009-{{execucao}}",
+        "date_due": "2027-04-01",
+        "value": 10,
+        "done": true,
+        "category_id": "{{categoria}}",
+        "bank_account_id": "{{conta_b}}"
+      }
+    },
+    {
+      "nome": "saldo_a_depois",
+      "rota": "/api/bank_accounts/{{conta_a}}",
+      "salvar": {
+        "a1": "data.balance"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "saldo_b_depois",
+      "rota": "/api/bank_accounts/{{conta_b}}",
+      "salvar": {
+        "b1": "data.balance"
+      },
+      "registrar": false
+    }
+  ],
+  "derivar": {
+    "delta_conta_a": "a1 - a0",
+    "delta_conta_b": "b1 - b0"
+  },
+  "esperado": {
+    "criar_paga_em_a": {
+      "status": 201
+    },
+    "mover_para_b": {
+      "status": 200
+    },
+    "delta_conta_a": 0,
+    "delta_conta_b": 0
+  },
+  "capturado": {
+    "em": "2026-09-24",
+    "de": "http://localhost:8081"
+  }
+}

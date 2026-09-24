@@ -9,7 +9,8 @@ echo "Aguardando MySQL em $DB_HOST..."
 until mysqladmin ping -h"$DB_HOST" -u"$DB_USERNAME" -p"$DB_PASSWORD" --silent; do sleep 2; done
 
 if [ "${LEGACY_SEED:-0}" = "1" ] && [ "$(mysql -N -h"$DB_HOST" -u"$DB_USERNAME" -p"$DB_PASSWORD" "$DB_DATABASE" -e "SHOW TABLES LIKE 'migrations'")" = "" ]; then
-  php artisan migrate --force --seed
+  php artisan migrate --force
+  php artisan db:seed --force --class=DeterministicSeeder
 fi
 
 exec "$@"

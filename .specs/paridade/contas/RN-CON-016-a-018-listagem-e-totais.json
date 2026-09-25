@@ -1,0 +1,99 @@
+{
+  "rn": [
+    "RN-CON-016",
+    "RN-CON-017",
+    "RN-CON-018"
+  ],
+  "descricao": "Listagem com search vazio (como o SPA envia) e consistência de bill_data com a lista filtrada.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "categoria",
+      "rota": "/api/category_expenses",
+      "salvar": {
+        "categoria": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "conta_bancaria",
+      "rota": "/api/bank_accounts",
+      "salvar": {
+        "conta": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "listar_como_o_spa",
+      "rota": "/api/bill_pays?search=&page=1&orderBy=id&sortedBy=asc",
+      "salvar": {
+        "total_sem_busca": "data.bills.meta.pagination.total"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "criar",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-017-{{execucao}}",
+        "date_due": "2027-07-01",
+        "value": 10,
+        "done": false,
+        "category_id": "{{categoria}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "buscar_por_nome",
+      "rota": "/api/bill_pays?search=PAR-017-{{execucao}}",
+      "caminho": "data.bills.data",
+      "campos": [
+        "value",
+        "done"
+      ],
+      "salvar": {
+        "a_pagar_na_busca": "data.bills.data.0.value",
+        "total_a_pagar_informado": "data.bill_data.total_to_pay"
+      }
+    }
+  ],
+  "derivar": {
+    "lista_sem_busca_vazia": "total_sem_busca === 0",
+    "totais_consistentes_com_a_lista": "total_a_pagar_informado === a_pagar_na_busca",
+    "total_a_pagar_informado_e_numero": "typeof total_a_pagar_informado === \"number\""
+  },
+  "esperado": {
+    "criar": {
+      "status": 201
+    },
+    "buscar_por_nome": {
+      "status": 200,
+      "corpo": [
+        {
+          "value": 10,
+          "done": false
+        }
+      ]
+    },
+    "lista_sem_busca_vazia": true,
+    "totais_consistentes_com_a_lista": false,
+    "total_a_pagar_informado_e_numero": true
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  },
+  "divergencias": {
+    "adr": "ADR-004",
+    "esperado": {
+      "lista_sem_busca_vazia": false,
+      "totais_consistentes_com_a_lista": true
+    }
+  }
+}

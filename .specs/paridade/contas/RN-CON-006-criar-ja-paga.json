@@ -116,5 +116,28 @@
   "capturado": {
     "em": "2026-09-24",
     "de": "http://localhost:8081"
+  },
+  "divergencias": {
+    "adr": "ADR-003",
+    "esperado": {
+      "copias": {
+        "status": 200,
+        "corpo": [
+          {
+            "date_due": "2027-02-05",
+            "done": true
+          },
+          {
+            "date_due": "2027-03-05",
+            "done": false
+          },
+          {
+            "date_due": "2027-04-05",
+            "done": false
+          }
+        ]
+      },
+      "delta_criar_paga_com_repeticao": -10
+    }
   }
 }

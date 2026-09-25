@@ -106,5 +106,12 @@
   "capturado": {
     "em": "2026-09-24",
     "de": "http://localhost:8081"
+  },
+  "divergencias": {
+    "adr": "ADR-003",
+    "esperado": {
+      "delta_conta_a": 10,
+      "delta_conta_b": -10
+    }
   }
 }

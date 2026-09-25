@@ -67,7 +67,9 @@ Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios 
 
 | Módulo | AS-IS | Paridade | TO-BE | Implementado |
 |---|---|---|---|---|
-| contas | ✅ 15 regras, 8 dúvidas | 🟡 7 casos (12 regras) | 🟡 requirements em rascunho (ADR-003 proposto) | ⚪ |
+| contas | ✅ 18 regras, 9 dúvidas, contrato | 🟡 8 casos (15 regras) | 🟡 requirements aprovados (ADR-003) · adendo + design + tasks aguardando aprovação | ⚪ |
+
+O passo a passo completo, com descobertas e lições, está no [diário de bordo](docs/diario-de-bordo.md).
 | categorias · contas-bancarias · bancos · fluxo-de-caixa · assinaturas · auth | ⚪ | ⚪ | ⚪ | ⚪ |
 
 ### Achados até agora (pelas sondas no oráculo)

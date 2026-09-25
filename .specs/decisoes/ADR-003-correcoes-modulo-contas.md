@@ -1,6 +1,6 @@
 # ADR-003 — Comportamentos do legado corrigidos no módulo `contas`
 
-- **Status:** proposto — aguardando aprovação do Francisco
+- **Status:** aceito — aprovado por Francisco em 25/09/2026
 - **Data:** 25/09/2026
 
 ## Contexto
@@ -9,7 +9,7 @@ As sondas no oráculo confirmaram comportamentos do legado que parecem bugs (RN-
 e uma ambiguidade de produto (RN-CON-001). Reescrever com paridade cega migraria os bugs; corrigir sem registro
 faria o golden master falhar sem explicação.
 
-## Decisão (proposta)
+## Decisão
 
 | Regra | Legado | Sistema novo | Dúvida |
 |---|---|---|---|

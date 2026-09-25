@@ -23,6 +23,9 @@ Processo: engenharia reversa (AS-IS) → spec (TO-BE) → implementação por ta
 10. Código de módulo novo fica em `api/src/modules/<mod>/` (ou `web/src/modules/<mod>/`); o hook bloqueia a edição
     enquanto `.specs/novo/<mod>/tasks.md` não estiver aprovado pelo humano (`tools/aprovar-tasks.mjs` — nunca rode você).
 
+11. **Documente cada passo** em `docs/diario-de-bordo.md` (objetivo, o que foi feito, evidências, descobertas, decisões,
+    próximo passo), no mesmo commit da etapa. Decisões formais continuam em ADR; o diário aponta para eles.
+
 ## Ferramentas (harness — ver `docs/harness.md`)
 - `node tools/paridade.mjs [--base URL] [--alvo legado|novo] [filtro]` — golden master; `--alvo novo` aplica as `divergencias` aprovadas.
 - `node tools/oraculo-sql.mjs MÉTODO /rota [json]` — mostra o SQL que a requisição dispara no legado (no Git Bash: `MSYS_NO_PATHCONV=1`).

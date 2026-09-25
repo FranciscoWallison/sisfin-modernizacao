@@ -110,5 +110,17 @@
   "capturado": {
     "em": "2026-09-25",
     "de": "http://localhost:8081"
+  },
+  "divergencias": {
+    "adr": "ADR-003",
+    "esperado": {
+      "sem_categoria_e_conta": {
+        "status": 422
+      },
+      "valor_negativo_pago": {
+        "status": 422
+      },
+      "delta_valor_negativo_pago": 0
+    }
   }
 }

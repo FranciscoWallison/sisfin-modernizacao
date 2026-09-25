@@ -103,3 +103,24 @@
 - **Sonda:** `POST` com `value=-10, done=true` → 201; ao desmarcar, extrato `value=-10` ✅
 - **Confiança:** alta
 - **Suspeita de bug?** provável — conta a pagar negativa é uma receita disfarçada (DUV-CON-008)
+
+### RN-CON-016 — Listagem sem busca devolve lista vazia
+- **Regra:** sem `search`, o critério de valor em formato BR interpreta o texto vazio como `0` e filtra `value = 0`; como não há contas de valor zero, a listagem e os totais de `bill_data` vêm vazios/zerados.
+- **Evidência:** `legacy/app/Http/Controllers/Api/BillPaysController.php` (`index` sempre empurra `FindByValueBRCriteria($search)`) + `legacy/app/Criteria/FindByValueBRCriteria.php` (`NumberFormatter::parse`)
+- **Sonda:** `node tools/oraculo-sql.mjs GET /api/bill_pays` → `where (value = '0') and client_id = 2` → `total: 0`, `bill_data` zerado ✅
+- **Confiança:** alta
+- **Ambiente:** depende da versão do ICU — `php -r` no oráculo: `parse("")` → `float(0)` com ICU 63.1. O SPA envia `search=` sempre (DUV-CON-009), então no oráculo a tela lista vazio.
+- **Suspeita de bug?** sim — o critério BR deveria ser ignorado com busca vazia
+
+### RN-CON-017 — Busca combina texto, período e valor com OU
+- **Regra:** `search` é aplicado de três formas unidas por **OU**: `LIKE %texto%` em `date_due`, `name`, `value` e `done`; intervalo de datas `dd/mm/aaaa-dd/mm/aaaa`; e valor em formato BR (`1.234,56`). O filtro de tenant é aplicado com **E** por fora (sem vazamento entre clientes).
+- **Evidência:** `legacy/app/Repositories/BillPayRepositoryEloquent.php:23-27` (`fieldSearchable`), `legacy/app/Criteria/FindBetweenDateBRCriteria.php`, `legacy/app/Criteria/FindByValueBRCriteria.php`
+- **Sonda:** `search=01/01/2027-31/12/2027` → SQL `(… like …) or (date_due between '2027-01-01' and '2027-12-31') or value = '1') and client_id = 2` → 135 contas, todas do cliente 2 ✅. Efeito colateral: `"01/01/2027…"` também vira o valor `1` pelo parser BR.
+- **Confiança:** alta
+
+### RN-CON-018 — Totais de `bill_data` ignoram a busca por texto e erram a precedência com período
+- **Regra:** os totais (`total_paid`, `total_to_pay`, `total_expired`) removem a busca por texto (`popCriteria(RequestCriteria)`) e mantêm só os critérios BR. Com período, o `done` é combinado sem parênteses: `(date_due between …) or value = X and done = 1` — o `total_paid` passa a somar **todas** as contas do período, pagas ou não.
+- **Evidência:** `legacy/app/Repositories/Traits/BillRepositoryTrait.php:80-100` (`getQueryTotal`, `getQueryTotalByDone`)
+- **Sonda:** SQL observado na busca por período (ver RN-CON-017): `where ((date_due between …) or value = '1' and done = 1)` ✅
+- **Confiança:** alta
+- **Suspeita de bug?** sim — totais não correspondem à lista exibida

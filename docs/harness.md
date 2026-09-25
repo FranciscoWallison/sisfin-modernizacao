@@ -21,7 +21,7 @@ não depende de alguém escrever os testes certos: ele compara com a realidade (
 | Legado somente leitura | guia computacional | — | `deny: Edit(/legacy/**)` + hook `antes-de-editar` | ✅ |
 | Aprovação amarrada ao hash | guia computacional | — | `tools/aprovar-tasks.mjs` + hook `antes-de-editar` | ✅ |
 | Oráculo reproduzível | infraestrutura | comportamento | `docker-compose.yml` + `DeterministicSeeder` | ✅ |
-| Golden master | sensor computacional | comportamento | `tools/paridade.mjs` + `.specs/paridade/` | ✅ 7 casos |
+| Golden master | sensor computacional | comportamento | `tools/paridade.mjs` + `.specs/paridade/` | ✅ 8 casos |
 | Observabilidade do oráculo | sensor computacional | comportamento | `tools/oraculo-sql.mjs` | ✅ |
 | Rastreabilidade | sensor computacional | comportamento | `tools/rastreabilidade.mjs` | ✅ |
 | Validação de specs ao editar | sensor computacional | manutenibilidade | hook `depois-de-editar` | ✅ |
@@ -52,7 +52,7 @@ No Git Bash, prefixe `oraculo-sql.mjs` com `MSYS_NO_PATHCONV=1` (senão `/api/..
 |---|---|---|---|---|
 | Oráculo em Docker | ~1 h; imagem PHP 7.1 via `archive.debian.org` | Sem ele não existe sensor de comportamento | ✅ viável | Subiu na 1ª tentativa; migrations + seed OK |
 | Seed determinístico | ~15 min, fora de `legacy/` | Dados iguais a cada reset | ✅ viável | Mesmo hash dos dados em 2 resets |
-| Golden master HTTP | ~200 linhas | Sensor de comportamento reaproveitável no sistema novo | ✅ **maior retorno** | 7 casos estáveis após reset; revelou 4 bugs |
+| Golden master HTTP | ~200 linhas | Sensor de comportamento reaproveitável no sistema novo | ✅ **maior retorno** | 8 casos estáveis após reset; revelou 6 bugs |
 | `oraculo-sql` | ~50 linhas | Evidência de transação/efeitos que a leitura do PHP não dá com certeza | ✅ alto retorno | Provou a RN-CON-007 (extrato fora da transação) |
 | Hooks pre/post | ~120 linhas | Correção imediata, antes do CI | ✅ viável | 5 testes automatizados + simulações |
 | Aprovação por hash | ~40 linhas | Plano aprovado ≠ plano executado vira impossível sem aviso | ✅ viável | Testado: alterar o plano derruba a aprovação |
@@ -65,6 +65,7 @@ No Git Bash, prefixe `oraculo-sql.mjs` com `MSYS_NO_PATHCONV=1` (senão `/api/..
 
 - **Não é fronteira de segurança.** Os hooks interceptam `Edit/Write`; um comando `Bash` que escreve arquivo passa por fora. O gate definitivo é o CI + revisão humana do PR.
 - **Diagnóstico errado passa.** A premissa "o admin não tem cliente" (DUV-CON-006) estava errada e nenhum sensor pegaria — só a sonda no oráculo.
+- **O oráculo reproduz o código, não o ambiente original.** A versão do ICU (63.1 na imagem `php:7.1-apache`) muda o resultado da busca (RN-CON-016). Diferença que pode ser de ambiente vira dúvida, não regra.
 - **Datas do seed são relativas ao dia do seed.** Os casos usam deltas e dados próprios; nunca valores absolutos do seed.
 - **O oráculo tem prazo de validade.** Antes de desligar o legado, os casos de paridade viram testes de regressão do sistema novo (o `esperado` já capturado continua valendo).
 - **Harness também é código**: cresce e precisa de manutenção. Os testes em `tools/testes/` existem por isso.

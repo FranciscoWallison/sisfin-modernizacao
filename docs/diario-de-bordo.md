@@ -941,7 +941,14 @@ Vue 3**.
     - CSP estrita, `X-Frame-Options` e `nosniff` no nginx (o E2E roda com a CSP ativa);
     - NUL no login;
     - log sem query no servidor inteiro.
-- **Ciclo completo:** API 330+ testes; web 12 unitários + 7 E2E; espelho 20/20; paridade 24/24 nos dois alvos.
+- **Mais dois sensores ajustados no fechamento:**
+  - **SQL cru:** o sensor de arquitetura barrou as consultas `lower(email)` (fora do padrão "infra + clientId"). Em
+    vez de desligá-lo, ganhou uma exceção **verificável**: só dois arquivos, e só se todo SQL cru deles tocar apenas
+    `users`. Mutação: com `clients` na consulta, volta a acusar.
+  - **Espelho:** acusou 3 rotas do extrato com `8948.720000000001` × `8948.72`. É ruído de `DOUBLE` do legado
+    (RN-CON-011), que apareceu quando a paridade lançou centavos no oráculo. O espelho passou a comparar dinheiro em
+    centavos (ADR-003), absorvendo só o ruído (< 1e-6).
+- **Ciclo completo:** API 335 testes; web 12 unitários + 7 E2E; espelho 20/20; paridade 24/24 nos dois alvos.
 
 **Pendências:**
 - CSP do `/app` (o Vue 1 usa `eval`);

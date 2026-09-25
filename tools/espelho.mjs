@@ -50,7 +50,8 @@ const ROTAS = [
   ['c3', '/api/banks'], // lista global: igual para todos
   ['c1', '/api/category_expenses'], // plano de contas
   ['c1', '/api/category_revenues'],
-  ['c1', '/api/statements?page=1&orderBy=id&sortedBy=asc&search=01%2F09%2F2026+-+30%2F09%2F2026&include=bankAccount'], // extrato
+  ['c1', '/api/statements?page=1&orderBy=id&sortedBy=asc&search=&include=bankAccount'], // extrato (a URL real da tela manda o
+  // período do mês — diverge por decisão, ADR-008; e o período fixo antigo dependia da data de hoje)
   ['c1', '/api/statements?orderBy=id&sortedBy=desc'],
   ['c1', '/api/statements?page=2'],
   ['c3', '/api/bank_accounts?page=1&orderBy=balance&sortedBy=desc&search=&include=bank&limit=5'],

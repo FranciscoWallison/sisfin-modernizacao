@@ -1,9 +1,9 @@
-Status: rascunho — aguardando aprovação do Francisco
+Status: aprovado — Francisco, 25/09/2026 (com o plano, hash fa8f9227d732). Mudanças posteriores no fim do arquivo.
 
 # Design — módulo `extrato` — TO-BE
 
 > Implementa `requirements.md` (REQ-EXT-01..06). Tira o extrato do `compat/` para um módulo próprio, com a mesma
-> serialização. Contrato: `.specs/legado/modulos/extrato/contrato.md`. Correções: ADR-008 (proposto).
+> serialização. Contrato: `.specs/legado/modulos/extrato/contrato.md`. Correções: ADR-008 (aceito).
 
 ## 1. Estrutura (`api/src/modules/extrato/`)
 
@@ -70,3 +70,12 @@ http/
 | Usuário estranhar ver só o mês (antes via tudo) | É o que a tela sempre prometeu (o campo mostra o período). Registrado no ADR-008 como efeito visível |
 | Mover o `interpretarBusca` quebrar `contas` | Suíte de `contas` + paridade de `contas/` no alvo novo |
 | Ordenar por relação (nome da conta) ficar lento | Extrato é por cliente e paginado; índice de `statements` já existente (cliente, conta, data) |
+
+## Mudanças após a aprovação
+
+| Data | Mudança | Motivo |
+|---|---|---|
+| 25/09/2026 | Só o **parser de período** foi para `shared/dominio/periodo.ts` (`dataBR`, `interpretarPeriodo`); o `interpretarBusca` continua em `contas`, usando-o | O `interpretarBusca` depende do teto monetário de `contas` (`TETO_CENTAVOS`); movê-lo inteiro faria `shared` depender de um módulo. Regex idêntica (conferida no diff); suíte de `contas` verde (revisão X3) |
+| 25/09/2026 | `POR_PAGINA` fica em `domain/consulta.ts` | O controller não pode importar de `infra/` (regra de camadas) |
+| 25/09/2026 | Fim do período limitado a `9999-12-31T23:59:59.999Z` | 31/12/9999 + 1 dia = ano 10000 → 500 no banco (revisão X1, teste vermelho antes) |
+| 25/09/2026 | O teste do órfão (REQ-EXT-06) afirma também o **estorno** | No sistema novo, excluir conta paga estorna (ADR-003 / REQ-CON-09): o lançamento original fica, nasce o de estorno, e os dois se anulam nos totais. O legado não estornava |

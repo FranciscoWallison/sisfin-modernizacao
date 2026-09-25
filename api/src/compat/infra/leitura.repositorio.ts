@@ -3,7 +3,6 @@ import { PRISMA_TENANT, PrismaTenant } from '../../shared/tenant/prisma-tenant';
 
 export type Sentido = 'asc' | 'desc';
 export const ORDEM_CONTA_BANCARIA = { id: 'id', name: 'name', agency: 'agency', account: 'account', balance: 'balance' } as const;
-export const ORDEM_EXTRATO = { id: 'id', value: 'value', balance: 'balance', bank_account_id: 'bankAccountId' } as const;
 
 export interface Pagina {
   pagina: number;
@@ -45,20 +44,5 @@ export class LeituraRepositorio {
 
   listaContasBancarias() {
     return this.db.bankAccount.findMany({ select: { id: true, name: true, account: true }, orderBy: { id: 'asc' } });
-  }
-
-  /** `search` é IGNORADO de propósito: o legado não declara campos pesquisáveis no extrato (trafego-spa.md). */
-  async extrato({ pagina, limite }: Pagina, ordem: { campo: keyof typeof ORDEM_EXTRATO; sentido: Sentido }, comConta: boolean) {
-    const [total, itens, porTipo] = await Promise.all([
-      this.db.statement.count(),
-      this.db.statement.findMany({
-        include: { bankAccount: comConta },
-        orderBy: [{ [ORDEM_EXTRATO[ordem.campo]]: ordem.sentido }, { id: 'asc' }],
-        skip: (pagina - 1) * limite,
-        take: limite,
-      }),
-      this.db.statement.groupBy({ by: ['statementableType'], _count: { _all: true }, _sum: { value: true } }),
-    ]);
-    return { total, itens, porTipo };
   }
 }

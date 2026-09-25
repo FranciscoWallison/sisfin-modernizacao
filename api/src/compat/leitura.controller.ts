@@ -4,12 +4,12 @@ import { CONFIG } from '../shared/auth-compat/contexto';
 import type { Config } from '../shared/config/config';
 import { IdDaRotaPipe } from '../shared/http/id-da-rota.pipe';
 import { limiteDaQuery, metaPaginacao, paginaDaQuery } from '../shared/http/paginacao';
-import { contaBancaria, ContaBancariaLida, dinheiro } from '../shared/http/serializacao';
+import { contaBancaria, ContaBancariaLida } from '../shared/http/serializacao';
 import { ComCliente } from '../shared/tenant/com-cliente';
-import { LeituraRepositorio, ORDEM_CONTA_BANCARIA, ORDEM_EXTRATO, Sentido } from './infra/leitura.repositorio';
+import { LeituraRepositorio, ORDEM_CONTA_BANCARIA, Sentido } from './infra/leitura.repositorio';
 
 // Fatias de LEITURA compatíveis (T08): o que o módulo contas, a paridade e o SPA usam. As categorias saíram
-// daqui para o módulo `categorias` (G04).
+// daqui para o módulo `categorias` (G04); o extrato, para o módulo `extrato` (E03).
 // Formatos: contrato.md + trafego-spa.md (parâmetros reais do SPA). Serão substituídas pelos módulos
 // contas-bancarias, categorias e extrato quando forem migrados.
 
@@ -64,36 +64,5 @@ export class LeituraController {
     const c = await this.repo.contaBancaria(id, inclui(req, 'bank'));
     if (!c) throw new NotFoundException();
     return { data: contaBancaria(c, this.config.urlArquivos) };
-  }
-
-  @Get('statements')
-  @ComCliente()
-  async extrato(@Query('page') page: unknown, @Query('limit') limit: unknown, @Req() req: Request) {
-    const pagina = { pagina: paginaDaQuery(page), limite: limiteDaQuery(limit) };
-    const ordem = ordemDaQuery(req, Object.keys(ORDEM_EXTRATO) as (keyof typeof ORDEM_EXTRATO)[]);
-    const { total, itens, porTipo } = await this.repo.extrato(pagina, ordem, inclui(req, 'bankAccount'));
-    const tipo = (t: string) => porTipo.find((p) => p.statementableType === t);
-    const receitas = tipo('BillReceive');
-    const despesas = tipo('BillPay');
-    return {
-      data: {
-        statements: {
-          data: itens.map((s) => ({
-            id: s.id,
-            date: s.createdAt ? s.createdAt.toISOString().slice(0, 10) : null,
-            value: dinheiro(s.value),
-            balance: dinheiro(s.balance),
-            bank_account_id: s.bankAccountId,
-            ...('bankAccount' in s && s.bankAccount ? { bankAccount: { data: contaBancaria(s.bankAccount as ContaBancaria) } } : {}),
-          })),
-          meta: metaPaginacao(total, itens.length, pagina.pagina, urlBase(req), req.query, pagina.limite),
-        },
-        statement_data: {
-          count: (receitas?._count._all ?? 0) + (despesas?._count._all ?? 0),
-          revenues: { total: dinheiro(receitas?._sum.value ?? 0) },
-          expenses: { total: dinheiro(despesas?._sum.value ?? 0) },
-        },
-      },
-    };
   }
 }

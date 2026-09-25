@@ -838,6 +838,34 @@ pela config (S10); o 1º CI real no push.
 
 **Próximo passo:** Francisco decide as DUV-EXT-001 e 002 (ADR-008) e aprova com `node tools/aprovar-tasks.mjs extrato "Francisco"`.
 
+## Etapa 21 — Módulo `extrato`: implementação (E01–E05) · 25/09/2026
+
+**Aprovação:** Francisco aprovou o plano (hash `fa8f9227d732`), aceitando o ADR-008.
+
+- **E01:**
+  - O design mandava levar o `interpretarBusca` inteiro para `shared/`, mas ele depende do teto monetário de `contas`,
+    e `shared` passaria a depender de um módulo. Foi só o **parser de período**, com a regex idêntica (conferida no
+    diff), e a suíte de `contas` continuou verde.
+  - Domínio do extrato: allowlist de ordenação (com `date` e a chave de join da tela) e período → intervalo UTC
+    `[início, dia seguinte ao fim)`.
+- **E02:**
+  - Lista, contagem e totais com o **mesmo `where`**, sem ordenação nos totais: era isso que quebrava o legado.
+  - Os testes comparam a ordem da API com a ordem que o próprio Postgres dá.
+  - Defesa em profundidade na conta bancária do lançamento. **Mutação:** sem ela, um lançamento com conta de outro
+    cliente aparecia e somava.
+- **Um falso alarme que ensinou algo:** o teste do órfão acusou "204 × 205" e parecia status HTTP. Era a
+  **contagem**: no sistema novo, excluir conta paga **estorna** (ADR-003), então nasce um lançamento a mais. O teste
+  passou a afirmar isso: o original continua e o estorno anula o valor.
+- **E03/E04:**
+  - **paridade 2/2**; 24/24 no total, nos dois alvos; espelho 20/20;
+  - a URL de período fixo saiu do espelho;
+  - na tela nova, o extrato abre no mês e **ordena por Conta e por Data**, que davam 500 no legado.
+- **E05 — revisão de segurança:** 0 altos/médios.
+  - **X1:** `31/12/9999` + 1 dia = ano 10000 → 500. Teste vermelho, depois corrigido limitando o fim.
+  - **X2** (ano 0000) não se confirmou; o teste fica como sensor.
+- **Marco: toda a API do legado está no sistema novo**, exceto o webhook da Iugu. O que sobra é o site em Blade
+  (cadastro/login/convite), o admin de bancos e as assinaturas.
+
 ---
 
 ## Lições até aqui

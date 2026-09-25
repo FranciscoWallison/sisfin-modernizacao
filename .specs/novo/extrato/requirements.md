@@ -1,9 +1,9 @@
-Status: rascunho — aguardando aprovação do Francisco
+Status: aprovado — Francisco, 25/09/2026 (com o plano, hash fa8f9227d732). Mudanças posteriores no fim do arquivo.
 
 # Requirements — módulo `extrato` — TO-BE
 
 > Gerado de `.specs/legado/modulos/extrato/regras.md` (RN-EXT-001..007) e `duvidas.md` (DUV-EXT-001..003).
-> Contrato a preservar: `contrato.md` do módulo. Correções: ADR-008 (proposto).
+> Contrato a preservar: `contrato.md` do módulo. Correções: ADR-008 (aceito).
 > Aceite: `.specs/paridade/extrato/` com `--alvo novo` (divergências do ADR-008 registradas nos casos) + espelho.
 
 ### REQ-EXT-01 — Lista paginada de lançamentos do cliente

@@ -1,6 +1,6 @@
 # ADR-008 — Comportamentos do legado corrigidos no módulo `extrato`
 
-- **Status:** proposto — aguardando aprovação do Francisco
+- **Status:** aceito — aprovado — Francisco, 25/09/2026 (com o plano, hash fa8f9227d732)
 - **Data:** 25/09/2026
 
 ## Contexto

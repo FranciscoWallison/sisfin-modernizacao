@@ -1,4 +1,4 @@
-Status: rascunho
+Status: aprovado · Aprovado por: Francisco · Em: 2026-09-25 · Hash: fa8f9227d732
 
 # Tasks — módulo `extrato`
 

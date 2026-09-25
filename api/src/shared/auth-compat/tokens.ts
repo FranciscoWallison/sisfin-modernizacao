@@ -37,8 +37,8 @@ export function emitirToken(
 }
 
 /** Verifica assinatura (só HS256), validade e presença das claims obrigatórias. Lança em qualquer problema. */
-export function verificarToken(segredo: string, token: string): ClaimsToken {
-  const dados = jwt.verify(token, segredo, { algorithms: [ALGORITMO], clockTolerance: 5 });
+export function verificarToken(segredo: string, token: string, emissor: string): ClaimsToken {
+  const dados = jwt.verify(token, segredo, { algorithms: [ALGORITMO], clockTolerance: 5, issuer: emissor });
   if (typeof dados === 'string') throw new Error('payload inválido');
   const { sub, jti, exp, iat, nbf } = dados as Record<string, unknown>;
   if (typeof sub !== 'number' || typeof jti !== 'string' || typeof exp !== 'number' || typeof iat !== 'number' || typeof nbf !== 'number') {

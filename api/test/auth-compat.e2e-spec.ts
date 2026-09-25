@@ -66,6 +66,7 @@ describe('auth compatível (T06)', () => {
     expect(typeof claims.jti).toBe('string');
     expect(claims.user).toEqual({ id: 2, name: 'Cliente 2', email: 'cliente1@user.com' });
     expect(claims.client_id).toBeUndefined(); // cliente vem do banco, nunca do token
+    expect(claims.iss).toBe('sisfin-api'); // fixo pela configuração, não pelo cabeçalho Host
   });
 
   it('campos faltando → 422 no formato do legado', async () => {
@@ -97,14 +98,15 @@ describe('auth compatível (T06)', () => {
 
   describe('tokens rejeitados → 401', () => {
     const agora = () => Math.floor(Date.now() / 1000);
-    const claims = (extra = {}) => ({ sub: 2, jti: 'x', iat: agora(), nbf: agora(), exp: agora() + 3600, ...extra });
+    const claims = (extra = {}) => ({ iss: 'sisfin-api', sub: 2, jti: 'x', iat: agora(), nbf: agora(), exp: agora() + 3600, ...extra });
     const casos: Array<[string, () => string]> = [
       ['sem token', () => ''],
       ['alg none', () => jwt.sign(claims(), '', { algorithm: 'none' })],
       ['HS512 (algoritmo diferente)', () => jwt.sign(claims(), SEGREDO, { algorithm: 'HS512' })],
       ['segredo de outro sistema (ex.: o legado)', () => jwt.sign(claims(), 'x'.repeat(40))],
       ['expirado', () => jwt.sign(claims({ iat: agora() - 7200, nbf: agora() - 7200, exp: agora() - 3600 }), SEGREDO)],
-      ['sem jti', () => jwt.sign({ sub: 2, iat: agora(), nbf: agora(), exp: agora() + 60 }, SEGREDO)],
+      ['sem jti', () => jwt.sign({ iss: 'sisfin-api', sub: 2, iat: agora(), nbf: agora(), exp: agora() + 60 }, SEGREDO)],
+      ['emissor diferente (iss forjado)', () => jwt.sign(claims({ iss: 'http://evil.example/api/access_token' }), SEGREDO)],
       ['usuário apagado', () => jwt.sign(claims({ sub: 999 }), SEGREDO)],
     ];
     it.each(casos)('%s', async (_nome, gerar) => {
@@ -113,6 +115,18 @@ describe('auth compatível (T06)', () => {
       if (token) req.set('Authorization', `Bearer ${token}`);
       await req.expect(401);
     });
+  });
+
+  it('revisão do código: rate limit NÃO é contornado trocando a caixa do caminho (/API/...)', async () => {
+    const r = await http().post('/API/access_token').send({ email: 'x@x.com', password: 'y' });
+    expect(r.headers['x-ratelimit-limit']).toBe('60');
+  });
+
+  it('revisão do código: 10 tentativas erradas PARALELAS não furam o lockout (máx. 5 chegam a checar a senha)', async () => {
+    const respostas = await Promise.all(Array.from({ length: 10 }, () => login('cliente1@user.com', 'errada')));
+    const status = respostas.map((r) => r.status).sort();
+    expect(status.filter((s) => s === 400)).toHaveLength(5);
+    expect(status.filter((s) => s === 403)).toHaveLength(5);
   });
 
   it('RN-AUT-002: 60 req/min com X-RateLimit-*; a 61ª → 429 com Retry-After', async () => {

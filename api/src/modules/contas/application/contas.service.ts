@@ -35,10 +35,19 @@ export class ContasService {
     if (Object.keys(erros).length) throw new UnprocessableEntityException(erros);
   }
 
-  /** Passos 4–6 do design §5: trava as contas bancárias em ordem, aplica os deltas e registra o extrato. */
-  private async aplicar(t: ContasTransacao, tipo: TipoConta, contaId: number, movs: Movimento[], ctx: Contexto): Promise<void> {
-    if (!movs.length) return;
-    const saldos = await t.travarContasBancarias(movs.map((m) => m.contaBancaria), ctx.clienteId);
+  /**
+   * Passo 4 do design §5: trava as contas bancárias (em ordem de id) ANTES de gravar a conta. Gravar antes pega um
+   * lock de FK (KEY SHARE) na conta bancária, e o FOR UPDATE depois precisaria "subir" esse lock → deadlock (40P01)
+   * entre criações simultâneas — achado da revisão de segurança do código, confirmado por teste.
+   */
+  private travar(t: ContasTransacao, movs: Movimento[], ctx: Contexto): Promise<Map<number, string>> {
+    return movs.length ? t.travarContasBancarias(movs.map((m) => m.contaBancaria), ctx.clienteId) : Promise.resolve(new Map());
+  }
+
+  /** Passos 5–6: aplica os deltas sobre os saldos já travados e registra o extrato. */
+  private async aplicar(
+    t: ContasTransacao, tipo: TipoConta, contaId: number, movs: Movimento[], saldos: Map<number, string>, ctx: Contexto,
+  ): Promise<void> {
     for (const m of movs) {
       const atual = saldos.get(m.contaBancaria);
       if (atual === undefined) throw new UnprocessableEntityException({ bank_account_id: ['The selected bank account id is invalid.'] });
@@ -57,8 +66,10 @@ export class ContasService {
     return this.repo.transacao(async (t) => {
       const { repeat, repeatNumber, repeatType, ...dados } = e;
       await this.validarReferencias(t, tipo, dados);
+      const movs = movimentos(tipo, null, estado(dados));
+      const saldos = await this.travar(t, movs, ctx);
       const conta = await t.criarConta(tipo, dados);
-      await this.aplicar(t, tipo, conta.id, movimentos(tipo, null, estado(dados)), ctx);
+      await this.aplicar(t, tipo, conta.id, movs, saldos, ctx);
       // REQ-CON-03: a conta informada + N repetições; REQ-CON-05: as repetições nascem EM ABERTO (corrige RN-CON-006)
       if (repeat) {
         for (const data of vencimentosDasRepeticoes(dados.dateDue, repeatNumber ?? 0, repeatType ?? MENSAL)) {
@@ -74,9 +85,10 @@ export class ContasService {
       const antes = await t.travarConta(tipo, id, ctx.clienteId); // lock + releitura (revisão de segurança #1)
       if (!antes) throw new NotFoundException();
       await this.validarReferencias(t, tipo, dados);
-      const conta = await t.atualizarConta(tipo, id, dados);
       const movs = movimentos(tipo, { valor: paraCentavos(antes.valor), paga: antes.paga, contaBancaria: antes.contaBancaria }, estado(dados));
-      await this.aplicar(t, tipo, id, movs, ctx);
+      const saldos = await this.travar(t, movs, ctx);
+      const conta = await t.atualizarConta(tipo, id, dados);
+      await this.aplicar(t, tipo, id, movs, saldos, ctx);
       return conta;
     });
   }
@@ -85,10 +97,11 @@ export class ContasService {
     return this.repo.transacao(async (t) => {
       const antes = await t.travarConta(tipo, id, ctx.clienteId);
       if (!antes) throw new NotFoundException();
-      await t.excluirConta(tipo, id);
       // REQ-CON-09: estorno com histórico preservado (corrige RN-CON-010)
       const movs = movimentos(tipo, { valor: paraCentavos(antes.valor), paga: antes.paga, contaBancaria: antes.contaBancaria }, null);
-      await this.aplicar(t, tipo, id, movs, ctx);
+      const saldos = await this.travar(t, movs, ctx);
+      await t.excluirConta(tipo, id);
+      await this.aplicar(t, tipo, id, movs, saldos, ctx);
     });
   }
 

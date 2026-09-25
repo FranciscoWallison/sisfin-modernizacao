@@ -66,6 +66,16 @@ descrever('contas: transação e concorrência (T12, integração)', () => {
     expect(await base.statement.count({ where: { statementableType: 'BillPay', statementableId: conta.id } })).toBe(1);
   });
 
+  it('revisão do código #1: 8 criações PAGAS simultâneas na MESMA conta bancária → sem deadlock, 8 débitos', async () => {
+    const saldoAntes = await saldo();
+    const resultados = await Promise.allSettled(
+      Array.from({ length: 8 }, () => comoCliente(() => servico.criar('pagar', entrada({ done: true }), ctx))),
+    );
+    const falhas = resultados.filter((r) => r.status === 'rejected').map((r) => String((r as PromiseRejectedResult).reason?.message ?? r));
+    expect(falhas).toEqual([]);
+    expect(await saldo()).toBeCloseTo(saldoAntes - 80, 2);
+  });
+
   it('exclusão de conta paga estorna e PRESERVA o histórico (REQ-CON-09)', async () => {
     const conta = await comoCliente(() => servico.criar('pagar', entrada({ done: true }), ctx));
     const saldoAntes = await saldo();

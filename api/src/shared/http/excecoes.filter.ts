@@ -31,10 +31,22 @@ export class ExcecoesFilter implements ExceptionFilter {
         resposta.status(422).json({ message: 'The given data was invalid.' });
         return;
       }
+      // Conflito de transação / deadlock (40P01) / serialização (40001): o cliente pode repetir
+      const codigoBanco = (erro as { meta?: { code?: unknown } })?.meta?.code;
+      if (codigoPrisma === 'P2034' || (codigoPrisma === 'P2010' && (codigoBanco === '40P01' || codigoBanco === '40001'))) {
+        resposta.status(409).json({ message: 'Conflict. Please try again.' });
+        return;
+      }
     }
 
     const id = randomUUID();
-    this.log.error(`erro não tratado [${id}]: ${(erro as Error)?.stack ?? String(erro)}`);
+    const nome = (erro as Error)?.name ?? '';
+    // Erros do Prisma trazem os ARGUMENTOS da query na mensagem (nomes, valores, datas): no log só nome e código
+    // (revisão de segurança do código — PII e dado financeiro fora dos logs)
+    const detalhe = nome.startsWith('PrismaClient')
+      ? `${nome} ${typeof codigoPrisma === 'string' ? codigoPrisma : ''}`.trim()
+      : ((erro as Error)?.stack ?? String(erro));
+    this.log.error(`erro não tratado [${id}]: ${detalhe}`);
     resposta.status(500).json({ message: 'Server Error', id });
   }
 

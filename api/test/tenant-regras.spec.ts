@@ -72,6 +72,14 @@ describe('regras de tenant (T07)', () => {
     expect(() => aplicar('update', { where: { id: 1 }, data: { bankAccount: { [chave]: { id: 1 } } } })).toThrow(/proibida/);
   });
 
+  it.each(['create', 'update', 'upsert', 'delete', 'updateMany'])('revisão do código: escrita aninhada "%s" também é proibida', (op) => {
+    expect(() => aplicar('create', { data: { name: 'x', bankAccount: { [op]: { id: 1 } } } })).toThrow(/proibida/);
+  });
+
+  it('Date e decimal são escalares aceitos no data', () => {
+    expect(() => aplicar('create', { data: { dateDue: new Date(), value: { toFixed: () => '10.00' } } })).not.toThrow();
+  });
+
   it('operação desconhecida → erro (não passa sem filtro)', () => {
     expect(() => aplicar('findRaw', {})).toThrow(/não é tratada/);
   });

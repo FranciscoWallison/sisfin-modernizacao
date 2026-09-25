@@ -34,6 +34,24 @@
 | T13. HTTP: criar/ler/editar/excluir | ✅ | **`paridade --alvo novo`: 9/9** (8 casos de contas + auth) | Divergência nova registrada (ADR-003): PUT de outro cliente com corpo incompleto → 422 antes do 404; caso reforçado com PUT de corpo válido → 404 nos dois sistemas |
 | T14. HTTP: listagem, busca e totais | ✅ | `RN-CON-016-a-018` com `--alvo novo`; na tela nova a lista de contas a pagar aparece (no legado vem vazia) e o dashboard mostra os totais do dia iguais ao legado | "Hoje" em **UTC**, como o legado (o design dizia America/Sao_Paulo sem ADR) |
 | T15. Gate completo no CI | ✅* | Job `sistema`: sobe legado + novo, ETL, espelho, paridade nos dois alvos, rastreabilidade `--strict`, jest com banco. **Ensaio local na mesma sequência: tudo verde (134 testes)** | *Execução real no GitHub só no próximo push |
-| T16. Revisão de segurança do código | ⏳ | | em andamento |
+| T16. Revisão de segurança do código | ✅ | `docs/revisoes/2026-09-25-security-contas-codigo.md`: os 12 achados das specs confirmados no código; 11 achados novos (0 altos) — **cada hipótese provada por teste antes de corrigir** (deadlock `40P01`, `/API/` sem rate limit, 10 logins paralelos sem bloqueio). 8 corrigidos, 3 pendências registradas; e2e A × B pelas rotas HTTP (7 testes) | Pendências: FK composta/RLS, store compartilhado (Redis), `trust proxy` |
 | T17. Testes de segurança transversais | ✅ | `test/contas-seguranca.spec.ts` (17): mass assignment (id, client_id, created_at…) → 422; valor 0/negativo/3 casas/teto/exponencial/NaN → 422; `repeat_number` 121 → 422; ids em texto aceitos; **log sem Authorization, query nem corpo** | Auditoria coberta na T12 |
-| T18. Documentação | ⏳ | | |
+| T18. Documentação | ✅ | README, diário (etapas 13–15), harness, design (mudanças após a aprovação), inventário, revisões de segurança | |
+
+## Resultado do módulo
+
+- **Paridade no sistema novo: 9/9** (`node tools/paridade.mjs --base http://localhost:3300 --alvo novo`).
+- **Espelho de leitura: 15/15** respostas idênticas ao legado logo após o ETL.
+- **157 testes** na API (unitários, e2e e integração no Postgres) + 5 do harness; rastreabilidade estrita sem órfãos.
+- Mesma tela do legado funcionando contra a API nova (:8083) nas telas de dashboard, contas a pagar/receber, contas
+  bancárias, plano de contas e extrato.
+
+## Pendências registradas (não bloqueiam o módulo; bloqueiam produção com escala)
+
+| Pendência | Origem | Quando |
+|---|---|---|
+| FK composta `(client_id, id)` ou RLS nas referências entre tabelas com tenant | Revisão de segurança do código #4 | Antes do cutover |
+| Lockout, blacklist e rate limit em store compartilhado (Redis) | ADR-005 / revisão #6 | Antes de ter mais de uma instância |
+| `trust proxy` com a lista exata de proxies | Revisão #3 | Quando houver balanceador na frente |
+| Primeira execução real do CI no GitHub | T15 | No próximo push |
+| Módulos ainda no legado: fluxo de caixa, bancos, assinaturas, auth completo (refresh) | inventário | Próximos ciclos |

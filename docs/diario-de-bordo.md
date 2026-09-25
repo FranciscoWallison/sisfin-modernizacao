@@ -627,6 +627,32 @@ plano com `node tools/aprovar-tasks.mjs contas "Francisco"`. Depois, Fase A (T01
 - **T16:** `security-reviewer` rodando sobre o **código** (a primeira revisão foi sobre as specs).
 - Tropeço de processo: um script de documentação passado inline pelo shell quebrou nas aspas; passou a ficar num arquivo.
 
+## Etapa 15 — T16: revisão de segurança do código e fechamento (T18) · 25/09/2026
+
+**Objetivo:** passar o código pelo sensor inferencial e só aceitar o módulo com os achados tratados.
+
+- `security-reviewer` sobre `api/src` e `api/test`: os 12 achados das specs **confirmados no código**; 11 novos, nenhum alto.
+  Registro: `docs/revisoes/2026-09-25-security-contas-codigo.md`.
+- **Regra que segui: hipótese do revisor vira teste que falha antes de eu corrigir.** As três mais sérias se confirmaram:
+  1. **Deadlock** — 8 criações pagas simultâneas na mesma conta bancária → `40P01 deadlock detected`. A conta era gravada
+     antes do `FOR UPDATE` (o design pedia o contrário): o insert pega lock de FK e o `FOR UPDATE` depois precisa subir o
+     lock. Invertida a ordem → 8 débitos, 3/3 execuções. Deadlock/serialização agora respondem 409.
+  2. **`/API/access_token` sem rate limit** — o Express não diferencia maiúsculas no caminho; o guard diferenciava.
+  3. **10 logins errados em paralelo, nenhum bloqueado** — havia um `await` (bcrypt) entre checar e contar a tentativa.
+     Agora a tentativa é reservada antes, no mesmo passo síncrono → 5× 400 + 5× 403.
+- Também corrigidos: escrita aninhada proibida por completo; log de erro do Prisma sem argumentos (PII); data inexistente,
+  `orderBy=constructor` e busca numérica gigante agora dão 422/ignoram em vez de 500; `iss` fixo e verificado; boot recusa
+  segredo de exemplo em produção (e o compose passou para `NODE_ENV=development`, que é o que ele é).
+- ETL ganhou checagem de **referências entre clientes** — provada corrompendo um registro de propósito.
+- e2e **A × B pelas rotas HTTP** (7 testes), que era o único ponto sem cobertura.
+- **Pendências registradas** (não bloqueiam o módulo; bloqueiam produção com escala): FK composta/RLS, Redis para
+  lockout/blacklist/rate limit, `trust proxy`.
+- Ciclo completo do CI ensaiado localmente: harness 5/5, rastreabilidade estrita, ETL, espelho 15/15, paridade 9/9 nos
+  dois alvos, camadas limpas, **157 testes**.
+
+**Módulo `contas` concluído (T01–T18).** Próximo: primeira execução real do CI no push; depois, escolher o próximo
+módulo (fluxo de caixa é o mais visível na tela — é o único gráfico do dashboard que ainda não carrega).
+
 ---
 
 ## Lições até aqui
@@ -647,3 +673,4 @@ plano com `node tools/aprovar-tasks.mjs contas "Francisco"`. Depois, Fase A (T01
     mencionava; só apareceram ao pôr a tela de verdade na frente da API nova.
 11. **Teste de mutação valida o teste.** Um teste de concorrência verde não prova nada até falhar sem o lock.
 12. **Divergência que aparece no fim vira ADR + caso reforçado**, nunca ajuste do "esperado".
+13. **Hipótese de revisor vira teste que falha antes da correção.** Três de três se confirmaram — e o teste fica como sensor.

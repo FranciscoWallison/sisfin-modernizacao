@@ -38,7 +38,7 @@ export class AuthController {
   @HttpCode(200)
   async accessToken(@Body() dto: LoginDto, @Req() req: RequisicaoComContexto): Promise<{ token: string }> {
     const ip = req.ip ?? 'desconhecido';
-    const bloqueado = this.tentativas.segundosBloqueado(dto.email, ip);
+    const bloqueado = this.tentativas.reservar(dto.email, ip); // conta a tentativa ANTES do await do bcrypt
     if (bloqueado > 0) {
       throw new HttpException({ message: `Too many login attempts. Please try again in ${bloqueado} seconds.` }, 403);
     }
@@ -49,13 +49,11 @@ export class AuthController {
 
     // Usuário sem cliente não loga (RN-CON-019 → REQ-CON-13); mesma resposta de credencial errada
     if (!usuario || !senhaOk || usuario.clientId === null) {
-      this.tentativas.registrarFalha(dto.email, ip);
       throw new HttpException({ message: 'These credentials do not match our records.' }, 400);
     }
 
     this.tentativas.limpar(dto.email, ip);
-    const emissor = `${req.protocol}://${req.get('host')}/api/access_token`;
-    return { token: emitirToken(this.config.jwtSegredo, usuario, emissor) };
+    return { token: emitirToken(this.config.jwtSegredo, usuario, this.config.jwtEmissor) };
   }
 
   @Post('logout')

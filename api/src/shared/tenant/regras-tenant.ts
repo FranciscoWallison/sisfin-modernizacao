@@ -17,13 +17,20 @@ type Args = Record<string, any>;
 
 const comCliente = (where: unknown, clienteId: number) => ({ AND: [where ?? {}, { clientId: clienteId }] });
 
+/** Valor escalar aceitável num `data`: primitivo, Date ou decimal (Prisma.Decimal / texto). */
+const escalar = (v: unknown) =>
+  v === null || typeof v !== 'object' || v instanceof Date || typeof (v as { toFixed?: unknown }).toFixed === 'function';
+
+/**
+ * Escrita aninhada é proibida POR INTEIRO (connect, create, update, upsert, delete…): a extensão não filtra o que
+ * vai dentro dela. Só campos escalares — ex.: bankAccountId em vez de bankAccount: { connect } (revisão do código).
+ */
 function semConnect(valor: unknown, caminho = 'data'): void {
   if (!valor || typeof valor !== 'object') return;
   for (const [k, v] of Object.entries(valor)) {
-    if (k === 'connect' || k === 'connectOrCreate' || k === 'set') {
-      throw new ViolacaoTenantError(`escrita aninhada com "${k}" em ${caminho} é proibida: use o campo escalar (ex.: bankAccountId)`);
+    if (!escalar(v)) {
+      throw new ViolacaoTenantError(`escrita aninhada em ${caminho}.${k} é proibida: use o campo escalar (ex.: bankAccountId)`);
     }
-    semConnect(v, `${caminho}.${k}`);
   }
 }
 

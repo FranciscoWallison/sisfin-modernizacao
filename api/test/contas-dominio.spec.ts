@@ -90,4 +90,8 @@ describe('T11 — busca (REQ-CON-11, ADR-004)', () => {
   });
   it('texto com número dentro não é valor', () => expect(interpretarBusca('PAR-017')?.valorCentavos).toBeUndefined());
   it('limita a 100 caracteres', () => expect(interpretarBusca('x'.repeat(300))?.texto).toHaveLength(100));
+  it('revisão do código: número gigante (20 dígitos) NÃO vira filtro de valor (virava "1e+99.00" e 500)', () => {
+    expect(interpretarBusca('12345678901234567890')?.valorCentavos).toBeUndefined();
+    expect(interpretarBusca('999.999.999,99')?.valorCentavos).toBe(99_999_999_999);
+  });
 });

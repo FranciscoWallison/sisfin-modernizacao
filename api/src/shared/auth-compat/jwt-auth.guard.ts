@@ -23,7 +23,7 @@ export class JwtAuthGuard implements CanActivate {
 
     let claims;
     try {
-      claims = verificarToken(this.config.jwtSegredo, token);
+      claims = verificarToken(this.config.jwtSegredo, token, this.config.jwtEmissor);
     } catch {
       throw naoAutenticado();
     }

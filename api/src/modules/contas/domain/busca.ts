@@ -5,6 +5,8 @@
 //   - valor em formato BR ("1.234,56"), só se a busca INTEIRA for um número (o legado lia o prefixo:
 //     "01/01/2027-…" virava o valor 1 — efeito colateral de RN-CON-017 que não é mantido).
 
+import { TETO_CENTAVOS } from './dinheiro';
+
 export interface Busca {
   texto?: string;
   periodo?: { inicio: string; fim: string }; // "aaaa-mm-dd"
@@ -33,7 +35,9 @@ export function interpretarBusca(valor: string | undefined | null): Busca | null
   const numeroBR = /^\d{1,3}(\.\d{3})*(,\d{1,2})?$|^\d+(,\d{1,2})?$/;
   if (numeroBR.test(texto)) {
     const [inteiro, decimal = ''] = texto.replace(/\./g, '').split(',');
-    busca.valorCentavos = Number(inteiro) * 100 + Number(decimal.padEnd(2, '0'));
+    const centavos = Number(inteiro) * 100 + Number(decimal.padEnd(2, '0'));
+    // acima do teto não existe conta com esse valor — e um número gigante virava "1e+99.00" e 500 no banco
+    if (centavos <= TETO_CENTAVOS) busca.valorCentavos = centavos;
   }
   return busca;
 }

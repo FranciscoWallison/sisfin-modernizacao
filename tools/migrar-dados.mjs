@@ -116,7 +116,16 @@ const orfaos = await q(`
   ORDER BY s.id`);
 const tiposDesconhecidos = await q(`SELECT DISTINCT statementable_type AS tipo FROM statements WHERE statementable_type NOT IN ('BillPay','BillReceive')`);
 const semCliente = await q(`SELECT id FROM users WHERE client_id IS NULL ORDER BY id`);
-const ok = contagens.every((c) => c.origem === c.destino) && tiposDesconhecidos.length === 0;
+// Referências cruzadas entre clientes: as FKs não incluem client_id, então o banco não garante o mesmo tenant.
+// A aplicação confia nisso (ex.: include=bankAccount) — o ETL verifica (revisão de segurança do código).
+const cruzadas = await q(`
+  SELECT 'bill_pays' AS tabela, b.id, 'bank_account' AS referencia FROM bill_pays b JOIN bank_accounts x ON x.id = b.bank_account_id WHERE x.client_id <> b.client_id
+  UNION ALL SELECT 'bill_pays', b.id, 'category' FROM bill_pays b JOIN category_expenses x ON x.id = b.category_id WHERE x.client_id <> b.client_id
+  UNION ALL SELECT 'bill_receives', b.id, 'bank_account' FROM bill_receives b JOIN bank_accounts x ON x.id = b.bank_account_id WHERE x.client_id <> b.client_id
+  UNION ALL SELECT 'bill_receives', b.id, 'category' FROM bill_receives b JOIN category_revenues x ON x.id = b.category_id WHERE x.client_id <> b.client_id
+  UNION ALL SELECT 'statements', s.id, 'bank_account' FROM statements s JOIN bank_accounts x ON x.id = s.bank_account_id WHERE x.client_id <> s.client_id
+  ORDER BY 1, 2`);
+const ok = contagens.every((c) => c.origem === c.destino) && tiposDesconhecidos.length === 0 && cruzadas.length === 0;
 
 // ---- Relatório ----
 const agora = new Date().toISOString();
@@ -153,6 +162,11 @@ ${tabelaMd(orfaos.slice(0, 50), ['id', 'tipo', 'origem_id'])}
 
 ${semCliente.length ? `${semCliente.length}: ids ${semCliente.map((u) => u.id).join(', ')} — no sistema novo não conseguem logar (REQ-CON-13).` : '_nenhum_'}
 
+## Referências cruzadas entre clientes
+
+${cruzadas.length ? `❌ ${cruzadas.length} registro(s) apontam para conta bancária/categoria de OUTRO cliente — corrigir na origem antes do cutover.` : '_nenhuma_'}
+${tabelaMd(cruzadas.slice(0, 50), ['tabela', 'id', 'referencia'])}
+
 ## Tipos de extrato não reconhecidos
 
 ${tiposDesconhecidos.length ? tiposDesconhecidos.map((t) => `- \`${t.tipo}\``).join('\n') : '_nenhum_'}
@@ -165,7 +179,7 @@ mkdirSync(dirname(destinoRelatorio), { recursive: true });
 writeFileSync(destinoRelatorio, relatorio);
 
 console.table(contagens);
-console.log(`arredondamentos: ${arredondamentos.length} · saldo≠extrato: ${divergenciaSaldo.length} · órfãos: ${orfaos.length} · usuários sem cliente: ${semCliente.length}`);
+console.log(`arredondamentos: ${arredondamentos.length} · saldo≠extrato: ${divergenciaSaldo.length} · órfãos: ${orfaos.length} · usuários sem cliente: ${semCliente.length} · referências entre clientes: ${cruzadas.length}`);
 console.log(`relatório: ${destinoRelatorio.slice(raiz.length + 1)}`);
 await origem.end();
 await destino.end();

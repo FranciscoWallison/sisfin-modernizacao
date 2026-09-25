@@ -86,7 +86,7 @@ Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios 
 
 | Módulo | AS-IS | Paridade | TO-BE | Implementado |
 |---|---|---|---|---|
-| contas | ✅ 19 regras, 9 dúvidas (todas respondidas), contrato | ✅ 8 casos + 4 regras n/a cobertas por tasks | ✅ requirements, design e tasks aprovados (hash `d854ed6545ef`) | ✅ **paridade 9/9 no sistema novo** · Fase C em andamento — ver [progresso](.specs/novo/contas/progresso.md) |
+| contas | ✅ 19 regras, 9 dúvidas (todas respondidas), contrato | ✅ 8 casos + 4 regras n/a cobertas por tasks | ✅ requirements, design e tasks aprovados (hash `d854ed6545ef`) | ✅ **migrado** — paridade 9/9, espelho 15/15, 157 testes; revisado por segurança — ver [progresso](.specs/novo/contas/progresso.md) |
 | auth | 🟡 3 regras (controles de segurança) | ✅ 1 caso | 🟡 no REQ-CON-13 / ADR-005 | ⚪ |
 | categorias · contas-bancarias · bancos · fluxo-de-caixa · assinaturas | ⚪ | ⚪ | ⚪ | ⚪ |
 

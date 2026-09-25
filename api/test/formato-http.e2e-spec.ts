@@ -87,6 +87,10 @@ describe('configuração no boot (T05)', () => {
     expect(() => lerConfig({ JWT_SECRET: 'curto' })).toThrow(ConfigInvalidaError);
     expect(() => lerConfig({})).toThrow(ConfigInvalidaError);
   });
+  it('recusa segredo de exemplo/desenvolvimento em produção', () => {
+    expect(() => lerConfig({ NODE_ENV: 'production', JWT_SECRET: 'sisfin-api-segredo-local-de-desenvolvimento-nao-usar-em-producao' })).toThrow(/exemplo/);
+    expect(lerConfig({ NODE_ENV: 'production', JWT_SECRET: 'k3v9$Qz!pX7wL2mN8rT4yB6cH1dF5gJ0s' }).ambiente).toBe('production');
+  });
   it('recusa DEBUG_SQL fora de development', () => {
     expect(() => lerConfig({ ...configOk, NODE_ENV: 'production', DEBUG_SQL: '1' })).toThrow(/DEBUG_SQL/);
     expect(lerConfig({ ...configOk, NODE_ENV: 'development', DEBUG_SQL: '1' }).debugSql).toBe(true);

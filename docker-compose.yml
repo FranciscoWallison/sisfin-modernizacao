@@ -68,7 +68,8 @@ services:
         condition: service_healthy
     ports: ["3300:3000"]
     environment:
-      NODE_ENV: production
+      # development: é o ambiente LOCAL; com production a API recusaria o segredo de desenvolvimento abaixo
+      NODE_ENV: development
       PORT: "3000"
       DATABASE_URL: postgresql://sisfin:sisfin@api-db:5432/sisfin
       # Só desenvolvimento local. Diferente do segredo do legado (ADR-005): tokens não são intercambiáveis

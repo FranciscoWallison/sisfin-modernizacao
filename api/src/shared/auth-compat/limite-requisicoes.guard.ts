@@ -18,14 +18,17 @@ export class LimiteRequisicoesGuard implements CanActivate {
 
   canActivate(ctx: ExecutionContext): boolean {
     const req = ctx.switchToHttp().getRequest<RequisicaoComContexto>();
-    if (!req.path.startsWith('/api/')) return true;
+    // O Express roteia sem diferenciar maiúsculas: "/API/…" também é API (achado da revisão do código)
+    const caminho = req.path.toLowerCase();
+    if (!caminho.startsWith('/api/')) return true;
     const res = ctx.switchToHttp().getResponse<Response>();
 
     let chave = `ip:${req.ip}`;
     const token = /^Bearer (.+)$/.exec(req.headers.authorization ?? '')?.[1];
-    if (token) {
+    // No login, sempre por IP: um Bearer válido do atacante não pode dar a ele um balde extra de tentativas
+    if (token && caminho !== '/api/access_token') {
       try {
-        chave = `usuario:${verificarToken(this.config.jwtSegredo, token).sub}`;
+        chave = `usuario:${verificarToken(this.config.jwtSegredo, token, this.config.jwtEmissor).sub}`;
       } catch {
         /* token inválido: limita por IP; o JwtAuthGuard responde 401 depois */
       }

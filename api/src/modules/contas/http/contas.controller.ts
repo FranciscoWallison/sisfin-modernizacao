@@ -56,7 +56,8 @@ function ordem(req: Request) {
   const campo = String(req.query.orderBy ?? 'id');
   const sentido = String(req.query.sortedBy ?? 'asc');
   const erros: Record<string, string[]> = {};
-  if (!(campo in ORDEM)) erros.orderBy = ['The selected order by is invalid.'];
+  // hasOwn, não "in": "in" olha o protótipo e deixava passar orderBy=constructor/toString (→ 500)
+  if (!Object.hasOwn(ORDEM, campo)) erros.orderBy = ['The selected order by is invalid.'];
   if (!['asc', 'desc'].includes(sentido)) erros.sortedBy = ['The selected sorted by is invalid.'];
   if (Object.keys(erros).length) throw new UnprocessableEntityException(erros);
   return { campo: ORDEM[campo as keyof typeof ORDEM], sentido: sentido as 'asc' | 'desc' };

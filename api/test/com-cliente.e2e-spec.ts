@@ -35,7 +35,7 @@ describe('@ComCliente (T07)', () => {
   const usuarios = { porEmail: async () => null, porId: async (id: number) => ({ 2: usuario(2, 5), 90: usuario(90, null) } as any)[id] ?? null };
   const token = (sub: number) => {
     const agora = Math.floor(Date.now() / 1000);
-    return jwt.sign({ sub, jti: `j${sub}`, iat: agora, nbf: agora, exp: agora + 60, client_id: 2 }, SEGREDO);
+    return jwt.sign({ iss: 'sisfin-api', sub, jti: `j${sub}`, iat: agora, nbf: agora, exp: agora + 60, client_id: 2 }, SEGREDO);
   };
 
   beforeAll(async () => {

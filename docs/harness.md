@@ -33,7 +33,8 @@ não depende de alguém escrever os testes certos: ele compara com a realidade (
 | Teste de mutação | sensor de sensor | comportamento | remover o `FOR UPDATE` → o teste de concorrência tem de falhar | ✅ falhou 3/3 (T12) |
 | Regras de camadas | sensor computacional | arquitetura | `api/.dependency-cruiser.cjs` (hook + CI) + lint de SQL cru | ✅ mensagens dizem o que fazer |
 | Isolamento de tenant | sensor computacional | arquitetura | teste estrutural em `api/` | ⏳ junto com o `design.md` |
-| Revisão de segurança | sensor inferencial | arquitetura | subagente `security-reviewer` | ✅ 1ª execução: 12 achados nas specs de `contas` (`docs/revisoes/`) |
+| Revisão de segurança | sensor inferencial | arquitetura | subagente `security-reviewer` | ✅ 2 execuções: specs (12 achados) e código (11 achados, 0 altos) — `docs/revisoes/` |
+| **Hipótese → teste que falha → correção** | disciplina | todas | todo achado inferencial marcado como hipótese vira um teste que falha antes de corrigir | ✅ deadlock, rate limit por caixa, corrida no lockout |
 | *Garbage collection* | sensor recorrente | manutenibilidade | agente agendado (rastreabilidade + drift spec × código) | ⏳ quando houver código |
 
 ## Como usar

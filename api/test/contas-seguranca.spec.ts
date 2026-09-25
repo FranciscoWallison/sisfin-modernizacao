@@ -42,6 +42,10 @@ describe('T17 — corpo de contas (REQ-CON-13)', () => {
     expect((await validar({ ...valido, value: '999999999.99' })).ok).toBe(true);
   });
 
+  it.each(['2026-02-31', '2026-13-45', '31/01/2027', '2027-1-5'])('revisão do código: date_due inexistente "%s" → 422 (antes: 500)', async (date_due) => {
+    expect(Object.keys(((await validar({ ...valido, date_due })) as { erros: object }).erros)).toEqual(['date_due']);
+  });
+
   it('repeat_number > 120 → 422 (DoS por repetição — revisão #7)', async () => {
     expect((await validar({ ...valido, repeat: true, repeat_number: 121, repeat_type: 1 })).ok).toBe(false);
     expect((await validar({ ...valido, repeat: true, repeat_number: 120, repeat_type: 1 })).ok).toBe(true);

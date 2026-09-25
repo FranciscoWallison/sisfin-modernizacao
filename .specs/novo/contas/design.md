@@ -204,6 +204,9 @@ Controles que **não podem se perder** (revisão #3, #4; RN-AUT-001..003):
 | Data | Mudança | Motivo |
 |---|---|---|
 | 25/09/2026 | API exposta no host em **:3300** (continua :3000 dentro do container) | A porta 3000 do host já estava em uso por outro processo local (T01) |
+| 25/09/2026 | Contas bancárias travadas **antes** de gravar a conta (o §5 já pedia; a 1ª implementação invertia) | Gravar antes pega lock de FK e o FOR UPDATE depois precisa subir o lock → deadlock 40P01 provado por teste (revisão do código) |
+| 25/09/2026 | `iss` do JWT fixo (`sisfin-api`, configurável) e verificado | Vinha do cabeçalho `Host`, controlado pelo cliente; o SPA não lê o `iss` (revisão do código) |
+| 25/09/2026 | Escrita aninhada proibida por completo (não só `connect`) | A extensão de tenant não filtra o que vai dentro dela (revisão do código) |
 | 25/09/2026 | "Hoje" dos totais em **UTC** (não America/Sao_Paulo) | O legado usa UTC (`config/app.php`); mudar o fuso é correção de comportamento e exigiria ADR — mantida a paridade (T14) |
 | 25/09/2026 | Valor validado por um validador próprio (`ValorMonetario`) sobre o texto | `@Min`/`@Max` comparam número; com o valor já em texto (para não passar por ponto flutuante) toda conta dava 422 (T13) |
 | 25/09/2026 | Notação exponencial só é rejeitada quando chega como TEXTO | Número JSON `1e3` já chega convertido (1000) pelo parser; detectar exigiria ler o corpo cru — risco baixo |

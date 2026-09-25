@@ -1,6 +1,6 @@
 import { Transform } from 'class-transformer';
 import {
-  IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateBy, ValidateIf,
+  IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min, ValidateBy, ValidateIf,
 } from 'class-validator';
 
 // Corpo de POST/PUT de contas (design §6, REQ-CON-01/02/13). O SPA envia ids e valor às vezes como texto
@@ -25,13 +25,25 @@ const ValorMonetario = () =>
     },
   });
 
+/** "aaaa-mm-dd" que EXISTE no calendário (2026-02-31 e 2026-13-45 viravam Invalid Date e 500 — revisão do código). */
+const DataReal = () =>
+  ValidateBy({
+    name: 'dataReal',
+    validator: {
+      validate: (v: unknown) =>
+        typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(`${v}T00:00:00Z`)) &&
+        new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v,
+      defaultMessage: () => 'The date due is not a valid date.',
+    },
+  });
+
 export class ContaDto {
   @IsString({ message: 'The name must be a string.' })
   @MaxLength(255, { message: 'The name may not be greater than 255 characters.' })
   @IsNotEmpty({ message: 'The name field is required.' })
   name!: string;
 
-  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'The date due is not a valid date.' })
+  @DataReal()
   @IsNotEmpty({ message: 'The date due field is required.' })
   date_due!: string;
 

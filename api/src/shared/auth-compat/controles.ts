@@ -30,6 +30,18 @@ export class TentativasLogin {
     return 0;
   }
 
+  /**
+   * Checa e CONTA a tentativa no mesmo passo síncrono (sem await entre os dois). Devolve os segundos de bloqueio,
+   * ou 0 se a tentativa pode seguir. Sem isso, N tentativas paralelas passavam todas pela checagem antes de qualquer
+   * falha ser contada (achado da revisão de segurança do código, confirmado por teste). Sucesso → limpar().
+   */
+  reservar(email: string, ip: string): number {
+    const bloqueio = this.segundosBloqueado(email, ip);
+    if (bloqueio > 0) return bloqueio;
+    this.registrarFalha(email, ip);
+    return 0;
+  }
+
   registrarFalha(email: string, ip: string): void {
     const k = this.chave(email, ip);
     const t = this.agora();

@@ -16,7 +16,7 @@
 
 | Módulo | Controllers | Regras em | Status |
 |---|---|---|---|
-| contas | `Api\BillPaysController`, `Api\BillReceivesController`, `BillControllerTrait` | `.specs/legado/modulos/contas/` | 🟡 regras iniciais |
+| contas | `Api\BillPaysController`, `Api\BillReceivesController`, `BillControllerTrait` | `.specs/legado/modulos/contas/` | ✅ migrado (`api/src/modules/contas`) |
 | categorias | `Api\CategoryExpensesController`, `Api\CategoryRevenuesController` | — | ⚪ |
 | contas-bancarias | `Api\BankAccountsController` | — | ⚪ |
 | bancos | `Admin\BanksController`, `Api\BanksController` | — | ⚪ |

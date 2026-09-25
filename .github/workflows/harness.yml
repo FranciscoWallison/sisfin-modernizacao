@@ -73,7 +73,8 @@ jobs:
         run: node tools/paridade.mjs
 
       - name: Paridade contra o sistema novo (com as divergências aprovadas por ADR)
-        run: node tools/paridade.mjs --base http://localhost:3300 --alvo novo
+        # Só os módulos JÁ MIGRADOS (os demais ainda não têm rota no sistema novo). Ao concluir um módulo, acrescente-o.
+        run: node tools/paridade.mjs --base http://localhost:3300 --alvo novo auth/ contas/
 
       - name: Testes de integração da API (tenant, transação, concorrência)
         working-directory: api

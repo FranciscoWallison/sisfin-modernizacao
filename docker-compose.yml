@@ -77,6 +77,8 @@ services:
       CORS_ORIGINS: http://localhost:8081,http://localhost:8083
       # Base dos links de logo dos bancos (REQ-CBA-07): os arquivos moram no storage do legado durante o strangler
       ASSETS_URL: http://localhost:8081
+      # Local: o E2E cadastra a cada execução; em produção vale o padrão (5 por IP por hora — S3)
+      CADASTROS_POR_HORA: "200"
 
   # A MESMA tela do legado (SPA Vue 1 compilado de legacy/) servida duas vezes — só muda a API por trás.
   # É o Strangler Fig visível: o front não sabe qual backend atende.
@@ -96,11 +98,14 @@ services:
     build:
       context: .
       dockerfile: docker/spa/Dockerfile
-      target: servidor
+      target: servidor-novo # + o site novo (web/, Vue 3) fora de /app — ADR-009
       args:
         API_URL: http://localhost:3300/api
         ROTULO: "Versão nova — API NestJS (:3300)"
         COR: "#2e7d32"
+    environment:
+      # Origem da API na CSP do site novo (connect-src) — docker/spa/snippets/csp-site.inc.template
+      API_ORIGEM: http://localhost:3300
     depends_on: [api]
     ports: ["8083:80"]
 

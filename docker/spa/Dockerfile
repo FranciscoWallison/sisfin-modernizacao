@@ -27,3 +27,21 @@ COPY legacy/public/img /usr/share/nginx/html/img
 COPY --from=build /spa/public/build /usr/share/nginx/html/build
 COPY docker/spa/index.html /usr/share/nginx/html/app/index.html
 RUN sed -i "s|__ROTULO__|${ROTULO}|g; s|__COR__|${COR}|g" /usr/share/nginx/html/app/index.html
+
+# Site novo (Vue 3 + Vite, web/) — ADR-009: cadastro, login e minha conta, na MESMA origem do app
+FROM node:22-alpine AS web-build
+WORKDIR /web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY web/ ./
+ARG API_URL
+RUN test -n "$API_URL" && VITE_API_URL="$API_URL" npm test && VITE_API_URL="$API_URL" npm run build
+
+# Versão NOVA: o mesmo app em /app + o site novo no resto. A config é TEMPLATE (a origem da API entra na CSP ao
+# subir o container — variável API_ORIGEM no compose); o default.conf do estágio "servidor" é substituído por ela.
+FROM servidor AS servidor-novo
+RUN rm /etc/nginx/conf.d/default.conf
+COPY docker/spa/nginx-novo.conf.template /etc/nginx/templates/default.conf.template
+COPY docker/spa/snippets/csp-site.inc.template /etc/nginx/templates/csp-site.inc.template
+COPY docker/spa/snippets/seguranca.conf /etc/nginx/snippets/seguranca.conf
+COPY --from=web-build /web/dist /usr/share/nginx/html/web

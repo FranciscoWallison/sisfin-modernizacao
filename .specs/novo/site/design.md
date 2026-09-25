@@ -1,8 +1,8 @@
-Status: rascunho — aguardando aprovação do Francisco
+Status: aprovado — Francisco, 25/09/2026 (com o plano, hash af43e2de4789). Mudanças posteriores no fim do arquivo.
 
 # Design — módulo `site` (cadastro e login) — TO-BE
 
-> Implementa `requirements.md` (REQ-SIT-01..07). Contrato novo (API + tela) conforme o ADR-009 (proposto).
+> Implementa `requirements.md` (REQ-SIT-01..07). Contrato novo (API + tela) conforme o ADR-009 (aceito).
 
 ## 1. API (`api/src/modules/cadastro/`)
 
@@ -72,3 +72,15 @@ web/
 | `cadastro.repositorio` usar o Prisma sem tenant | Exceção só para esse arquivo no depcruise, com comentário; o repositório só cria (não lê dados de clientes) |
 | Cadastro público virar vetor de abuso | Rate limit das rotas de autenticação; o e-mail não é confirmado (como no legado) — registrar como pendência de produto |
 | Front novo sem layout "bonito" | Fora do escopo da migração; a função e o contrato são o aceite |
+
+## Mudanças após a aprovação
+
+| Data | Mudança | Motivo |
+|---|---|---|
+| 25/09/2026 | E-mail **sem diferenciar maiúsculas**: unicidade no cadastro (`mode: 'insensitive'`), login do `auth-compat` e índice único `lower(email)` (migration manual) | RN-SIT-009, achada ao implementar a S02: o legado (MySQL `utf8_unicode_ci`) aceita `CLIENTE1@USER.COM` no login; o novo respondia 400. Mutação: sem o índice, a corrida de dois cadastros com capitalização diferente passa os dois (3/3) |
+| 25/09/2026 | O aceite de tela é um **E2E versionado** (`web/e2e/`, `@playwright/test`, Chrome instalado, headless, perfil limpo), rodado localmente e na CI, em vez de só o Playwright MCP | O Chrome de perfil persistente do MCP travou a entrada num diálogo nativo (gerenciador de senhas) depois do 1º cadastro. Um E2E com perfil limpo é reproduzível e vira sensor |
+| 25/09/2026 | `@playwright/test` **1.63** | O 1.52 trava ao carregar a config num pacote ESM com Node 24 (até o `--list` travava) |
+| 25/09/2026 | Depois do login/cadastro, a tela vai para `/app#!/dashboard` | É o destino do login do próprio app (`Login.vue` → `$router.go({ name: 'dashboard' })`); `/app` sozinho parava em `#!/` sem carregar o dashboard |
+| 25/09/2026 | O log de `/my-financial` registra `$caminho` (o `$uri` antes do `try_files`) | Com `$uri`, o log mostrava `/web/index.html`. Nos dois casos, a query com o token não entra no log |
+| 25/09/2026 | O E2E tem `globalSetup` que espera `/health` e o site | Logo depois de um `compose up --build`, o 1º teste pegava a API ainda subindo |
+| 25/09/2026 | Revisão de segurança (S06): igualdade por `lower(email) = lower($1)` em vez de `mode: 'insensitive'` (**ILIKE sem escape — login com `%` entrava**); sensor contra a volta do padrão; e-mail do login ≤ 255 e sem NUL; varredura dos mapas em memória; limite próprio do cadastro (`CADASTROS_POR_HORA`); CSP e cabeçalhos no nginx (config vira template com `API_ORIGEM`); log sem query no servidor inteiro | `docs/revisoes/2026-09-25-security-site.md` — cada achado com teste vermelho antes |

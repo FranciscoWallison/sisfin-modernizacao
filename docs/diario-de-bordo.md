@@ -902,6 +902,54 @@ Vue 3**.
 **Próximo passo:** Francisco decide as DUV-SIT-001..004 (ADR-009) e aprova com
 `node tools/aprovar-tasks.mjs site "Francisco"`.
 
+## Etapa 23 — Módulo `site`: implementação (S01–S06) · 25/09/2026
+
+**Aprovação:** Francisco aprovou o plano (hash `af43e2de4789`), aceitando o ADR-009.
+
+- **S01/S02 — cadastro pela API:**
+  - `POST /api/register` com as mensagens exatas que as sondas capturaram;
+  - cliente + usuário numa transação;
+  - o mesmo JWT do login.
+  - **Achado ao implementar (RN-SIT-009):** o MySQL do legado não diferencia maiúsculas (`utf8_unicode_ci`), então o
+    login do legado aceita `CLIENTE1@USER.COM`, e o do sistema **novo recusava**. Era uma regressão no `auth-compat`,
+    migrado lá na T09 e nunca notada. Nova sonda reproduzível, correção e índice único `lower(email)`. **Mutação:** sem
+    o índice, dois cadastros simultâneos com capitalização diferente passavam os dois.
+- **S04 — nasce o `web/` (Vue 3 + Vite + TS):**
+  - telas de início, login, cadastro e "minha conta", servidas pelo **mesmo nginx e na mesma origem** do app antigo;
+  - o token vai para `localStorage['token']` e o usuário para `localStorage['user']`, exatamente as chaves do app;
+  - quem se cadastra cai no dashboard do app antigo, já logado, com o nome no menu.
+- **Quando a ferramenta falha no meio do caminho:**
+  - O Playwright MCP (Chrome com perfil persistente) parou de receber cliques e teclado depois do 1º cadastro: um
+    diálogo nativo do gerenciador de senhas prende a entrada. Em vez de pedir ajuda manual, virou **E2E versionado**
+    (`web/e2e/`, `@playwright/test`, Chrome instalado, headless, perfil limpo), que roda local e na CI.
+  - No caminho, o `@playwright/test` 1.52 **travava** ao carregar a config num pacote ESM com Node 24 (até o
+    `--list`). Isolei com uma config mínima e resolvi com o 1.63.
+  - Depois de um `compose up --build`, o 1º teste pegava a API subindo. O E2E ganhou um `globalSetup` que espera o
+    `/health`.
+- **S05 — token fora da URL:**
+  - o app antigo continua abrindo `/my-financial?token=…`; a tela nova apaga o parâmetro antes do roteador;
+  - o log do nginx registra a rota sem a query;
+  - tropeço: com `$uri`, o log mostrava `/web/index.html`, porque o `try_files` troca o `$uri`.
+- **S06 — revisão de segurança: 1 falha ALTA que EU introduzi na S02.**
+  - Para igualar maiúsculas, usei `mode: 'insensitive'` do Prisma, que vira **ILIKE sem escapar `%`**. O teste da
+    hipótese do revisor confirmou: login com o e-mail `%` e a senha do seed → **200 com o token do usuário 1**.
+  - Estava só local, antes do commit. Correção: `lower(email) = lower($1)`, mais um **sensor** que varre o código
+    contra a volta do padrão.
+  - Também corrigidos, cada um com teste vermelho antes:
+    - mapas em memória que só cresciam;
+    - limite próprio do cadastro (5 por IP por hora);
+    - CSP estrita, `X-Frame-Options` e `nosniff` no nginx (o E2E roda com a CSP ativa);
+    - NUL no login;
+    - log sem query no servidor inteiro.
+- **Ciclo completo:** API 330+ testes; web 12 unitários + 7 E2E; espelho 20/20; paridade 24/24 nos dois alvos.
+
+**Pendências:**
+- CSP do `/app` (o Vue 1 usa `eval`);
+- `trust proxy` na implantação;
+- confirmação de e-mail (produto);
+- DUV-CAT-004/007 e DUV-FLX-005;
+- módulos restantes: admin de bancos e assinaturas.
+
 ---
 
 ## Lições até aqui
@@ -936,3 +984,9 @@ Vue 3**.
     413 do body-parser virava 500 (S11). Ler o log pelo id de correlação levou ao achado.
 21. **Antes de impor um limite, meça o legado.** O legado quebra em 170 níveis de categorias; o novo aguenta mais de
     1.000. O limite deixou de ser correção urgente e virou decisão de produto (DUV-CAT-007).
+22. **Corrigir uma regressão pode abrir uma falha.** O conserto do login com maiúsculas (uma linha) abriu login sem
+    conhecer e-mail (ILIKE). O teste da hipótese do revisor pegou; o padrão agora tem um sensor permanente.
+23. **Quando a ferramenta de verificação quebra, o aceite vira código.** O Playwright interativo travou num diálogo
+    do Chrome; o E2E versionado, com perfil limpo, é melhor evidência — roda de novo, na CI, e com a CSP ativa.
+24. **Toda tela nova passa a ser um contrato duplo:** o do legado (mensagens, campos) e o do app antigo com quem ela
+    divide a origem (chaves do localStorage, rota de entrada `#!/dashboard`).

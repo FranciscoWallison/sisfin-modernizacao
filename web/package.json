@@ -1,0 +1,25 @@
+{
+  "name": "sisfin-web",
+  "private": true,
+  "description": "Front novo do SisFin (Vue 3): cadastro, login e minha conta — ADR-009. O app (Vue 1) continua em /app.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "test": "vitest run",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "vue": "3.5.13",
+    "vue-router": "4.5.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@vitejs/plugin-vue": "5.2.4",
+    "jsdom": "26.1.0",
+    "typescript": "5.8.3",
+    "vite": "6.3.5",
+    "vitest": "3.1.4",
+    "vue-tsc": "2.2.10"
+  }
+}

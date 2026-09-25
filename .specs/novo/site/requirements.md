@@ -1,9 +1,9 @@
-Status: rascunho — aguardando aprovação do Francisco
+Status: aprovado — Francisco, 25/09/2026 (com o plano, hash af43e2de4789). Mudanças posteriores no fim do arquivo.
 
 # Requirements — módulo `site` (cadastro e login) — TO-BE
 
 > Gerado de `.specs/legado/modulos/site/regras.md` (RN-SIT-001..008) e `duvidas.md` (DUV-SIT-001..006).
-> Correções e mudança de contrato (HTML → API + tela nova): ADR-009 (proposto).
+> Correções e mudança de contrato (HTML → API + tela nova): ADR-009 (aceito).
 > Aceite: testes de integração com as mensagens capturadas pelas sondas (`tools/sondas/site-*.mjs`) + Playwright.
 
 ### REQ-SIT-01 — Cadastro pela API cria cliente e usuário, atômico
@@ -19,11 +19,11 @@ Aceite: integração (cliente + usuário no banco; hash bcrypt; `role` client; o
 provocada no 2º passo → nenhum cliente órfão).
 
 ### REQ-SIT-02 — Validação com as mensagens do legado
-Origem: RN-SIT-002 · Decisão: **manter**, e **corrigir** o formato de `client.email` — ADR-009
+Origem: RN-SIT-002, RN-SIT-009 · Decisão: **manter**, e **corrigir** o formato de `client.email` — ADR-009
 
 - O SISTEMA DEVE aplicar:
   - `name` required|max:255;
-  - `email` required|email|max:255|único;
+  - `email` required|email|max:255|único **sem diferenciar maiúsculas** (RN-SIT-009);
   - `password` required|min:6|max:20|confirmed;
   - `client.name` required|max:255;
   - `client.email` required|max:255|**email** *(legado: sem formato)*.
@@ -40,10 +40,10 @@ Origem: RN-SIT-003 · Decisão: **manter** (a assinatura nunca foi exigida; o m�
 Aceite: integração (`GET /api/bank_accounts` → 200, lista vazia; não enxerga nada de outro cliente).
 
 ### REQ-SIT-04 — Login e logout pela API existente, sem sessão
-Origem: RN-SIT-004, RN-SIT-007 · Decisão: **substituir** a sessão pelo JWT — ADR-009
+Origem: RN-SIT-004, RN-SIT-007, RN-SIT-009 · Decisão: **substituir** a sessão pelo JWT — ADR-009
 
 - A tela de login DEVE usar `POST /api/access_token` e mostrar a mensagem de erro que a API devolve. O lockout é o já
-  migrado (RN-AUT-*).
+  migrado (RN-AUT-*). O e-mail do login NÃO DEVE diferenciar maiúsculas (RN-SIT-009).
 - O logout DEVE chamar `POST /api/logout` e apagar `localStorage['token']`.
 
 Aceite: Playwright (senha errada mostra a mensagem; certa leva ao `/app`; sair volta ao login e o token deixa de valer).
@@ -79,3 +79,9 @@ Origem: RN-SIT-006 · Decisão: **não migrar** — ADR-009 (DUV-SIT-001)
 
 Aceite: Playwright (`/my-financial` abre com o nome do usuário; `/my-financial/invite` cai na página "não encontrada"
 do front).
+
+## Mudanças após a aprovação
+
+| Data | Mudança | Motivo |
+|---|---|---|
+| 25/09/2026 | RN-SIT-009 (e-mail sem diferenciar maiúsculas) entra em REQ-SIT-02 (unicidade) e REQ-SIT-04 (login) | Achado ao implementar a S02: o MySQL do legado usa `utf8_unicode_ci`; o login do sistema novo recusava `CLIENTE1@USER.COM` (o legado aceita) — regressão no `auth-compat` já migrado, corrigida junto |

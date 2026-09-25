@@ -1,6 +1,6 @@
 # ADR-009 — Site (cadastro, login e convite): de Blade + sessão para API + tela nova
 
-- **Status:** proposto — aguardando aprovação do Francisco
+- **Status:** aceito — aprovado — Francisco, 25/09/2026 (com o plano, hash af43e2de4789)
 - **Data:** 25/09/2026
 
 ## Contexto
@@ -53,3 +53,6 @@ O SPA atual é compilado de `legacy/`, que não se edita. As telas do site são,
   tela (admin de bancos, assinaturas) entram nele.
 - O menu do SPA continua apontando para `/my-financial?token=…`, porque não editamos o SPA. A mitigação é do lado de
   quem recebe (DUV-SIT-003).
+- **Risco aceito (revisão de segurança S5):** "The email has already been taken." permite descobrir se um e-mail tem
+  conta. É o contrato do legado; a mitigação é o limite próprio do cadastro (5 por IP por hora, `CADASTROS_POR_HORA`),
+  e a confirmação de e-mail fica como pendência de produto.

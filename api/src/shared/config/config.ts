@@ -8,6 +8,8 @@ export interface Config {
   origensCors: string[];
   /** Base dos links de arquivos (logo dos bancos) — REQ-CBA-07: da configuração, nunca do cabeçalho Host. */
   urlArquivos: string;
+  /** Cadastros públicos por IP por hora (revisão de segurança do site, S3). Padrão 5; o compose local usa mais. */
+  cadastrosPorHora: number;
 }
 
 export class ConfigInvalidaError extends Error {}
@@ -32,6 +34,10 @@ export function lerConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (!/^https?:\/\/[^\s/?#]+(\/[^\s?#]*)?$/.test(urlArquivos)) {
     throw new ConfigInvalidaError('ASSETS_URL ausente ou inválida: informe a URL http(s) base dos arquivos (ex.: https://sisfin.exemplo.com).');
   }
+  const cadastrosPorHora = Number(env.CADASTROS_POR_HORA ?? 5);
+  if (!Number.isInteger(cadastrosPorHora) || cadastrosPorHora < 1 || cadastrosPorHora > 10_000) {
+    throw new ConfigInvalidaError('CADASTROS_POR_HORA inválido: inteiro de 1 a 10000 (limite de cadastros públicos por IP por hora).');
+  }
   return {
     ambiente,
     porta: Number(env.PORT ?? 3000),
@@ -41,5 +47,6 @@ export function lerConfig(env: NodeJS.ProcessEnv = process.env): Config {
     debugSql,
     origensCors: (env.CORS_ORIGINS ?? '').split(',').map((o) => o.trim()).filter(Boolean),
     urlArquivos,
+    cadastrosPorHora,
   };
 }

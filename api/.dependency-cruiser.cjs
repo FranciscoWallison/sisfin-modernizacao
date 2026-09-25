@@ -36,7 +36,8 @@ module.exports = {
       comment:
         'Repositórios de infra/ usam o cliente COM filtro de tenant: injete PRISMA_TENANT (shared/tenant/prisma-tenant). ' +
         'O PrismaService puro não filtra por cliente e só pode ser usado em shared/ (auth, tenant). Ver design.md §4.',
-      from: { path: '(^|/)(modules/[^/]+|compat)/infra/' },
+      // Exceção única (ADR-009, design do site §1): o cadastro público cria a RAIZ do tenant (Client + User)
+      from: { path: '(^|/)(modules/[^/]+|compat)/infra/', pathNot: '(^|/)modules/cadastro/infra/cadastro\\.repositorio\\.ts$' },
       to: { path: '(^|/)shared/prisma/prisma\\.service' },
     },
     {

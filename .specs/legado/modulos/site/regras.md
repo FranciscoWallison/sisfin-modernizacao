@@ -100,3 +100,14 @@
 - **Sonda:** `site-legado.mjs` passo 4 → 500 ✅
 - **Paridade:** n/a (o sistema novo usa JWT em cabeçalho, sem cookie de sessão — ADR-009); aceite em S06
 - **Confiança:** alta
+
+### RN-SIT-009 — E-mail sem diferenciar maiúsculas (cadastro e login)
+- **Regra:** a collation `utf8_unicode_ci` do MySQL compara texto sem diferenciar maiúsculas:
+  - o `unique:users` do cadastro recusa `CLIENTE1@USER.COM` quando existe `cliente1@user.com`;
+  - o login da API (`/api/access_token`) aceita o e-mail em qualquer capitalização.
+- **Evidência:** collation das tabelas (`SHOW TABLE STATUS`: `utf8_unicode_ci`); regra `unique:users`; `JWTAuth::attempt` → `where email = ?`
+- **Sonda:** `tools/sondas/site-email-maiusculas-legado.mjs` → cadastro "The email has already been taken."; login do
+  legado **200** ✅. **O sistema novo responde 400** no mesmo login (o Postgres diferencia maiúsculas; achado ao
+  implementar a S02, que corrige o `auth-compat` já migrado).
+- **Paridade:** n/a (o cadastro muda de HTML para API — ADR-009); aceite em S02
+- **Confiança:** alta

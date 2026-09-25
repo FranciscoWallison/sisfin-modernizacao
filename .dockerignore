@@ -3,3 +3,4 @@
 legacy/vendor
 legacy/ngrok.exe
 legacy/.env
+web/dist

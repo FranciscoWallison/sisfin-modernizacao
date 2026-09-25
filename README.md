@@ -93,7 +93,7 @@ Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios 
 | categorias (escrita) | ✅ 11 regras, 7 dúvidas, contrato | ✅ 6 casos | ✅ aprovado (ADR-007, hash `baf1b8d63868`) | ✅ **migrado** — paridade 6/6; tela funcionando; revisado por segurança; DUV-CAT-004 e 007 pendentes — ver [progresso](.specs/novo/categorias/progresso.md) |
 | contas-bancarias (escrita + bancos) | ✅ 9 regras, 5 dúvidas, contrato | ✅ 4 casos | ✅ aprovado (ADR-007, hash `547b3519e39d`) | ✅ **migrado** — paridade 4/4; espelho 20/20; telas de criar e editar funcionando — ver [progresso](.specs/novo/contas-bancarias/progresso.md) |
 | extrato | ✅ 7 regras, 3 dúvidas, contrato | ✅ 2 casos | ✅ aprovado (ADR-008, hash `fa8f9227d732`) | ✅ **migrado** — paridade 2/2; tela abre no mês e ordena por Data e Conta (500 no legado) — ver [progresso](.specs/novo/extrato/progresso.md) |
-| site (cadastro e login) | ✅ 8 regras, 6 dúvidas, contrato; 4 sondas reproduzíveis | n/a (HTML → API; ADR-009) | 🟡 rascunho — aguardando aprovação (ADR-009) | ⚪ |
+| site (cadastro e login) | ✅ 9 regras, 6 dúvidas, contrato; 5 sondas reproduzíveis | n/a (HTML → API; ADR-009) + **E2E** no navegador (7) | ✅ aprovado (ADR-009, hash `af43e2de4789`) | ✅ **migrado** — cadastro/login/minha conta em Vue 3 (`web/`), na mesma origem do app; revisado por segurança — ver [progresso](.specs/novo/site/progresso.md) |
 | assinaturas | ⚪ | ⚪ | ⚪ | ⚪ |
 
 O passo a passo completo, com descobertas e lições, está no [diário de bordo](docs/diario-de-bordo.md).

@@ -1,0 +1,17 @@
+/* Mínimo de propósito (design §2): função e contrato, não layout. Cor da versão nova (docker-compose: spa-novo). */
+:root { --cor: #2e7d32; --erro: #c62828; font-family: system-ui, sans-serif; color: #212121; }
+body { margin: 0; background: #f5f5f5; }
+.topo { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--cor); color: #fff; }
+.topo .marca { color: #fff; font-size: 1.4rem; font-weight: 600; text-decoration: none; }
+.topo .rotulo { font-size: 0.85rem; opacity: 0.85; }
+.conteudo { max-width: 480px; margin: 24px auto; padding: 0 16px; }
+.cartao { background: #fff; border-radius: 6px; padding: 20px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); }
+fieldset { border: 1px solid #e0e0e0; border-radius: 4px; margin: 12px 0; }
+label { display: block; margin-top: 12px; font-size: 0.9rem; }
+input { box-sizing: border-box; width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #bdbdbd; border-radius: 4px; }
+input[aria-invalid='true'] { border-color: var(--erro); }
+.erro { color: var(--erro); font-size: 0.85rem; margin: 4px 0 0; }
+.erro-geral { color: var(--erro); margin: 12px 0 0; }
+button, .botao { display: inline-block; margin-top: 16px; padding: 10px 16px; border: 0; border-radius: 4px; background: var(--cor); color: #fff; font-size: 1rem; cursor: pointer; text-decoration: none; }
+button[disabled] { opacity: 0.6; cursor: wait; }
+.acoes { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }

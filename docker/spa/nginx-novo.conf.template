@@ -1,0 +1,50 @@
+# Versão NOVA (:8083): o app (Vue 1, compilado de legacy/) em /app e o site novo (Vue 3, web/) no resto — mesma
+# origem, então os dois dividem o localStorage (token e user) — ADR-009.
+# TEMPLATE: a imagem do nginx gera conf.d/default.conf substituindo ${API_ORIGEM} (e SÓ as variáveis de ambiente
+# definidas — as do próprio nginx, como $uri, ficam intactas).
+
+# Log SEM a query string no servidor INTEIRO (REQ-SIT-06 + revisão do site S7): o app antigo abre
+# /my-financial?token=<JWT>, e nenhuma variação de caminho pode registrar o token. O caminho vem do $request_uri
+# original (o try_files troca o $uri por /web/index.html).
+map $request_uri $caminho_sem_query {
+    ~^(?<caminho>[^?]*) $caminho;
+}
+log_format sem_query '$remote_addr - $remote_user [$time_local] "$request_method $caminho_sem_query $server_protocol" '
+                     '$status $body_bytes_sent "$http_user_agent"';
+
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+    server_tokens off;
+    access_log /var/log/nginx/access.log sem_query;
+    # o error_log registra a linha da requisição (com a query) em erros comuns: só o crítico (S7)
+    error_log /var/log/nginx/error.log crit;
+
+    # Cabeçalhos para as locations SEM add_header próprio (o app em /app). Um add_header dentro de uma location
+    # anula os herdados do server — por isso o site novo repete o snippet (revisão do site S4).
+    include /etc/nginx/snippets/seguranca.conf;
+
+    # O app (Vue 1): URL de login <host>/app#!/login (services/appConfig.js). Sem CSP de script: o Vue 1 compila
+    # templates com eval — CSP para o app é pendência registrada (docs/revisoes/2026-09-25-security-site.md).
+    location = /app { try_files /app/index.html =404; }
+    location /app/ { try_files $uri /app/index.html; }
+    location ~ ^/(build|css|fonts|img)/ { try_files $uri =404; }
+
+    # O site novo (Vue 3, history mode): CSP estrita — sem inline, sem eval, só a própria origem e a API
+    location /assets/ {
+        root /usr/share/nginx/html/web;
+        include /etc/nginx/snippets/seguranca.conf;
+        try_files $uri =404;
+    }
+    location /my-financial {
+        include /etc/nginx/snippets/seguranca.conf;
+        include /etc/nginx/conf.d/csp-site.inc;
+        add_header Cache-Control "no-store" always;
+        try_files /web/index.html =404;
+    }
+    location / {
+        include /etc/nginx/snippets/seguranca.conf;
+        include /etc/nginx/conf.d/csp-site.inc;
+        try_files /web/index.html =404;
+    }
+}

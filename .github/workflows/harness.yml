@@ -52,7 +52,7 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Subir legado (Laravel 5.3 + MySQL 5.7) e sistema novo (NestJS + Postgres 16)
-        run: docker compose up -d --build legacy-db legacy-app api-db api
+        run: docker compose up -d --build legacy-db legacy-app api-db api spa-novo
 
       - name: Esperar os dois sistemas
         run: |
@@ -86,6 +86,13 @@ jobs:
           # Em série: as suítes de integração dividem o MESMO banco; em paralelo, uma lê o fluxo de caixa enquanto
           # outra lança contas no mesmo mês (flakiness observada ao entrarem as suítes de categorias/contas-bancarias)
           npx jest --runInBand
+
+      - name: Site novo — E2E no navegador (cadastro, login, token fora da URL — ADR-009)
+        # Chrome já instalado no runner (channel: 'chrome'); os testes unitários do web/ rodam no build da imagem
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright test
 
       - name: Logs em caso de falha
         if: failure()

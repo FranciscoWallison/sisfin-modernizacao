@@ -1,18 +1,24 @@
 import { Body, Controller, ForbiddenException, Get, HttpCode, HttpException, Inject, Post, Req, UseGuards } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import type { Config } from '../config/config';
+import { SemNul } from '../http/validadores';
 import { CONFIG, RequisicaoComContexto } from './contexto';
 import { ListaNegra, TentativasLogin } from './controles';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { emitirToken } from './tokens';
 import { UsuarioAuth, UsuariosRepositorio } from './usuarios.repositorio';
 
+// Legado: validateLogin só exige presença (sem formato de e-mail) — mantido. Tamanho e NUL (revisão do site S2/S6):
+// e-mail de 100 KB virava entrada no mapa de tentativas; "\u0000" chegava ao Postgres (500).
 class LoginDto {
+  @SemNul('email')
+  @MaxLength(255, { message: 'The email may not be greater than 255 characters.' })
   @IsString({ message: 'The email must be a string.' })
   @IsNotEmpty({ message: 'The email field is required.' })
   email!: string;
 
+  @MaxLength(255, { message: 'The password may not be greater than 255 characters.' })
   @IsString({ message: 'The password must be a string.' })
   @IsNotEmpty({ message: 'The password field is required.' })
   password!: string;

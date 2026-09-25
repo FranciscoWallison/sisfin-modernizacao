@@ -1,4 +1,4 @@
-Status: rascunho
+Status: aprovado · Aprovado por: Francisco · Em: 2026-09-25 · Hash: af43e2de4789
 
 # Tasks — módulo `site` (cadastro e login)
 

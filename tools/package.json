@@ -1,0 +1,10 @@
+{
+  "name": "sisfin-tools",
+  "private": true,
+  "description": "Ferramentas do harness (paridade, rastreabilidade, oráculo) e da migração de dados",
+  "type": "module",
+  "dependencies": {
+    "mysql2": "3.24.4",
+    "pg": "8.23.0"
+  }
+}

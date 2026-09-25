@@ -159,6 +159,21 @@ plano com `node tools/aprovar-tasks.mjs contas "Francisco"`. Depois, Fase A (T01
   não está testado.
 - CI: novo job `api` (typecheck, camadas, jest).
 
+## Etapa 9 — T04: migração de dados (ETL) · 25/09/2026
+
+**Objetivo:** o banco novo nasce dos **mesmos dados** do oráculo, para os mesmos casos de paridade rodarem nos dois lados.
+
+- `tools/migrar-dados.mjs` (drivers `mysql2` e `pg` em `tools/package.json`): tabela a tabela na ordem das FKs,
+  **preservando ids**, numa transação única (erro → rollback, nada gravado); ajusta as sequences.
+  Converte `tinyint` → boolean, `DOUBLE(8,2)` → texto decimal de 2 casas, `SisFinModelsBillPay` → `BillPay`.
+- Proteção: só grava em banco local (o ETL faz `TRUNCATE`), salvo `--permitir-remoto`.
+- Relatório com **só ids e valores** (revisão #12): contagens, arredondamentos, saldo × extrato, órfãos, usuários sem cliente.
+  `--seed` → `docs/relatorios/etl-seed.md` (versionado, dados fictícios); sem flag → `.relatorios/` (fora do git).
+- Oráculo **resetado** antes (as sondas tinham deixado dados de teste) → 1.135 linhas em 9 tabelas, contagens iguais,
+  0 arredondamentos, 0 divergências saldo × extrato, 0 órfãos.
+- Prova dos detectores: rodei a suíte de paridade (que exclui uma conta paga) e o ETL de novo → **1 órfão** detectado.
+- Limite honesto: o detector de arredondamento **não foi exercitado** — o seed só tem valores inteiros.
+
 ---
 
 ## Lições até aqui

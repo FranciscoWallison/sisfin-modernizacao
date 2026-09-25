@@ -11,5 +11,14 @@
 | F03. Repositório | ✅ | `test/fluxo.integracao.spec.ts` (Postgres): `parent_id IS NULL` ≡ profundidade 0; **árvore corrompida não vaza** (e o SQL do legado vaza os 777,77 — controle); extrato das 23h do último dia entra no saldo | |
 | F04. HTTP | ✅ | **`paridade --alvo novo`: 3/3 de primeira**; resposta inteira legado × novo (`?start=2018-02`) logo após o ETL: só o 1º mês difere (ADR-006), 3/3 execuções | Empate de nome não era determinístico nos dois bancos → desempate por `id` |
 | F05. Espelho e tela | ✅ | espelho **17/17** (+ `/api/cash_flows/monthly`); na tela nova, fluxo de caixa de 09/2026 a 07/2027 e o gráfico do dashboard aparecem (no legado: tabela misturando 08/2026 com 2018) | CI: paridade no novo inclui `fluxo-de-caixa/` |
-| F06. Segurança | ⏳ | | revisão em andamento |
-| F07. Documentação | ⏳ | | |
+| F06. Segurança | ✅ | `docs/revisoes/2026-09-25-security-fluxo-de-caixa.md`: 9 achados (0 altos); extrato cruzado **vazava 999,99** (teste falhou → corrigido); `b.client_id` provado por **mutação**; e2e HTTP (8); ano do `start` 1900–2100; centavos com BigInt; índice do saldo | Pendência: teste de carga (pool) |
+| F07. Documentação | ✅ | progresso, diário, README, inventário, ADR-006 (notas), revisão | |
+
+## Resultado do módulo
+
+- **Paridade no sistema novo: 3/3** (e 12/12 somando auth e contas); resposta inteira legado × novo logo após o ETL:
+  só o "primeiro mês" difere (ADR-006).
+- **Espelho de leitura: 17/17** (inclui `/api/cash_flows/monthly`).
+- Tela de fluxo de caixa e gráfico do dashboard funcionando na versão nova (na antiga, a tela mistura 08/2026 com 2018).
+- **Pendente de decisão:** DUV-FLX-005 (categorias homônimas somem da tabela — RN-FLX-008; hoje fiel ao legado).
+- **Pendente técnico:** teste de carga do `GET /api/cash_flows` (5 consultas por requisição).

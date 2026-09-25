@@ -21,7 +21,7 @@
 | contas-bancarias | `Api\BankAccountsController` | — | ⚪ |
 | bancos | `Admin\BanksController`, `Api\BanksController` | — | ⚪ |
 | extrato | `Api\StatementsController` | — | ⚪ |
-| fluxo-de-caixa | `Api\CashFlowsController` | `.specs/legado/modulos/fluxo-de-caixa/` | 🟡 AS-IS completo; TO-BE aguardando aprovação |
+| fluxo-de-caixa | `Api\CashFlowsController` | `.specs/legado/modulos/fluxo-de-caixa/` | ✅ migrado (`api/src/modules/fluxo-de-caixa`) |
 | assinaturas | `Site\SubscriptionsController`, `Api\IuguController`, `app/Iugu/*` | — | ⚪ |
 | auth | `Api\AuthController`, `Auth\*`, `Site\Auth\*`, `app/Jwt` | — | ⚪ |
 

@@ -52,7 +52,10 @@ export class FluxoRepositorio {
         SELECT bank_account_id, MAX(id) AS id FROM statements
         WHERE client_id = ${clientId} AND created_at < ${corte}::timestamp
         GROUP BY bank_account_id
-      ) u ON u.id = s.id`;
+      ) u ON u.id = s.id
+      -- defesa em profundidade: a conta bancária também tem de ser do cliente (revisão de segurança do módulo)
+      JOIN bank_accounts ba ON ba.id = s.bank_account_id AND ba.client_id = ${clientId}
+      WHERE s.client_id = ${clientId}`;
     return r.total;
   }
 }

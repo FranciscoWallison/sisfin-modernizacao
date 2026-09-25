@@ -177,7 +177,8 @@ model Statement {
   client      Client      @relation(fields: [clientId], references: [id])
   user        User?       @relation(fields: [userId], references: [id])
 
-  @@index([clientId, bankAccountId])
+  // saldo anterior do fluxo de caixa: último extrato por conta antes de uma data (revisão de segurança do módulo)
+  @@index([clientId, bankAccountId, createdAt, id])
   @@index([statementableType, statementableId])
   @@map("statements")
 }

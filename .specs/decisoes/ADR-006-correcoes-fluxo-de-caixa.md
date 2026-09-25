@@ -29,3 +29,12 @@ exclui o último dia (RN-FLX-006). O isolamento depende da integridade da árvor
   mesma janela e, no futuro, navegar entre meses.
 - O espelho de leitura passa a incluir `/api/cash_flows/monthly` (sem divergência). `/api/cash_flows` fica de fora
   do espelho: diverge por decisão.
+
+## Notas de implementação (divergências técnicas conhecidas, sem efeito com dados íntegros)
+
+- **Raiz = `parent_id IS NULL`** em vez da "profundidade 0" calculada pelo nested set. Equivalência testada no banco
+  migrado para despesas e receitas (`test/fluxo.integracao.spec.ts`).
+- **Ordenação `period, lower(name), name, id`** em vez da collation `utf8_unicode_ci` do MySQL (que também ignora
+  acentos). Pode mudar a ordem de nomes acentuados e, com a RN-FLX-008 (dedup por nome), qual categoria homônima
+  aparece — o `id` por último torna o resultado estável. Resolvido de vez se a DUV-FLX-005 for aprovada (agrupar por id).
+- **Saldo anterior** também exige que a conta bancária seja do cliente (revisão de segurança do módulo).

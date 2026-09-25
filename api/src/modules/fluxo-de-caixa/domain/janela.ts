@@ -25,7 +25,8 @@ export function janelaMensal(hoje: string, start?: string): JanelaMensal {
   let mes0: number;
   if (start !== undefined) {
     const m = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(start);
-    if (!m) throw new MesInvalidoError(`mês inválido: ${start}`);
+    // Date.UTC trata anos < 100 como 1900+ano ("0050-06" viraria 1950) — faixa fechada (revisão do módulo)
+    if (!m || Number(m[1]) < 1900 || Number(m[1]) > 2100) throw new MesInvalidoError(`mês inválido: ${start}`);
     ano = Number(m[1]);
     mes0 = Number(m[2]) - 1;
   } else {

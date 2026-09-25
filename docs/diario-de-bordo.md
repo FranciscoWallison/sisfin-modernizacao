@@ -683,6 +683,30 @@ módulo (fluxo de caixa é o mais visível na tela — é o único gráfico do d
 **Próximo passo:** Francisco decide as DUV-FLX-001..004 (ADR-006) e aprova o plano com
 `node tools/aprovar-tasks.mjs fluxo-de-caixa "Francisco"`.
 
+## Etapa 17 — Módulo `fluxo-de-caixa`: implementação (F01–F07) · 25/09/2026
+
+- **Aprovação:** `node tools/aprovar-tasks.mjs fluxo-de-caixa "Francisco"` → hash `e486869c0978`; ADR-006 aceito.
+- **Achado ao portar a montagem (RN-FLX-008):** o legado deduplica categorias **pelo nome**. Sonda: duas categorias
+  homônimas com 100 e 200 → a tabela mostra só uma, o total do mês mostra 300. Implementado **fiel** (o design dizia
+  "porte fiel") e levado à decisão (DUV-FLX-005) em vez de corrigido em silêncio.
+- **F01–F03:** janelas e montagem puras (21 testes); SQL agregado com `client_id` na raiz, nas filhas e nas contas.
+  Integração: árvore corrompida não vaza — e o próprio SQL do legado, rodado no mesmo banco, **vaza os 777,77** (controle).
+- **F04:** paridade **3/3 de primeira**. Verificação mais dura: resposta inteira legado × novo logo após o ETL.
+  - A primeira comparação mostrou diferenças que **eu mesmo causei**: a rodada de paridade tinha criado contas no banco novo.
+    Comparação só vale logo depois do ETL.
+  - Na categoria homônima, **nenhum dos dois bancos** garantia qual aparecia (empate no `ORDER BY`). Desempate por `id`.
+  - Resultado final, 3/3 execuções: **só o "primeiro mês" difere** — exatamente a correção do ADR-006.
+- Tropeço: um comentário SQL (`--`) depois da crase do template virou código TypeScript; o typecheck pegou e o
+  `docker compose up --build` seguiu com a imagem anterior — sem olhar o build, eu teria testado código velho.
+- **F05:** espelho 17/17; **a tela de fluxo de caixa e o gráfico do dashboard funcionam na versão nova**. Na antiga, a
+  tela mistura a coluna 08/2026 (calculada pelo front) com dados de 2018 (fixos no servidor).
+- **F06:** revisão de segurança — 9 achados, nenhum alto. O mais importante: **meus testes não provavam cada filtro
+  sozinho**. Com casos novos e **mutação** (sem `b.client_id`, os dois falham), o isolamento ficou provado. Extrato
+  apontando para conta bancária de outro cliente **vazava 999,99** no saldo — teste falhou, corrigido. Também: e2e das
+  rotas, ano do `start` limitado, centavos com `BigInt`, índice do saldo (`EXPLAIN`: index only scan). Uma hipótese
+  do revisor não se aplicou (`?start[x]` não vira objeto no Express 5) — o teste afirma o comportamento real.
+- **Ciclo completo** (espelho, paridade nos dois alvos, integração): verde.
+
 ---
 
 ## Lições até aqui
@@ -703,5 +727,7 @@ módulo (fluxo de caixa é o mais visível na tela — é o único gráfico do d
     mencionava; só apareceram ao pôr a tela de verdade na frente da API nova.
 11. **Teste de mutação valida o teste.** Um teste de concorrência verde não prova nada até falhar sem o lock.
 12. **Divergência que aparece no fim vira ADR + caso reforçado**, nunca ajuste do "esperado".
+15. **Teste de isolamento precisa isolar.** Com dois filtros no caminho, cada um tem de ser provado sozinho — mutação faz isso.
+16. **Compare logo depois do ETL.** Qualquer execução entre os dois (inclusive a paridade) muda um dos lados.
 14. **Oráculo com bug de janela ainda serve de oráculo:** crie os dados onde ele olha (2018) e compare o novo lá.
 13. **Hipótese de revisor vira teste que falha antes da correção.** Três de três se confirmaram — e o teste fica como sensor.

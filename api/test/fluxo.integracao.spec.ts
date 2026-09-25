@@ -8,7 +8,7 @@ const descrever = process.env.DATABASE_URL ? describe : describe.skip;
 descrever('fluxo de caixa no banco (F03, integração)', () => {
   const base = new PrismaService();
   const repo = new FluxoRepositorio(criarPrismaTenant(base));
-  const criados = { categorias: [] as number[], contas: [] as number[], extratos: [] as number[] };
+  const criados = { categorias: [] as number[], contas: [] as number[], recebimentos: [] as number[], extratos: [] as number[] };
   let clienteA: number;
   let clienteB: number;
 
@@ -21,15 +21,45 @@ descrever('fluxo de caixa no banco (F03, integração)', () => {
     // limpeza só com ids definidos (lição da T07)
     if (criados.extratos.length) await base.statement.deleteMany({ where: { id: { in: criados.extratos } } });
     if (criados.contas.length) await base.billPay.deleteMany({ where: { id: { in: criados.contas } } });
+    if (criados.recebimentos.length) await base.billReceive.deleteMany({ where: { id: { in: criados.recebimentos } } });
     if (criados.categorias.length) await base.categoryExpense.deleteMany({ where: { id: { in: criados.categorias } } });
     await base.$disconnect();
   });
 
-  it('parent_id IS NULL equivale à "profundidade 0" do legado no banco migrado (design §7)', async () => {
-    const divergentes = await base.$queryRaw<{ n: bigint }[]>`
+  it('parent_id IS NULL equivale à "profundidade 0" do legado no banco migrado — despesas E receitas (design §7)', async () => {
+    const despesas = await base.$queryRaw<{ n: bigint }[]>`
       SELECT COUNT(*) AS n FROM category_expenses r
       WHERE (r.parent_id IS NULL) <> ((SELECT COUNT(*) FROM category_expenses d WHERE r._lft BETWEEN d._lft AND d._rgt) - 1 = 0)`;
-    expect(Number(divergentes[0].n)).toBe(0);
+    const receitas = await base.$queryRaw<{ n: bigint }[]>`
+      SELECT COUNT(*) AS n FROM category_revenues r
+      WHERE (r.parent_id IS NULL) <> ((SELECT COUNT(*) FROM category_revenues d WHERE r._lft BETWEEN d._lft AND d._rgt) - 1 = 0)`;
+    expect([Number(despesas[0].n), Number(receitas[0].n)]).toEqual([0, 0]);
+  });
+
+  // Revisão de segurança do módulo: o teste da árvore corrompida não provava cada filtro sozinho. Este caso só é barrado
+  // por b.client_id — a categoria é LEGÍTIMA do cliente A; é a conta do cliente B que aponta para ela.
+  it.each([
+    ['despesas', 'categoryExpense', 'billPay'],
+    ['receitas', 'categoryRevenue', 'billReceive'],
+  ] as const)('REQ-FLX-07 (%s): conta de B apontando para categoria LEGÍTIMA de A não entra no fluxo de A', async (lado, modeloCat, modeloConta) => {
+    const raizA = await (base[modeloCat] as any).findFirstOrThrow({ where: { clientId: clienteA, parentId: null }, orderBy: { id: 'asc' } });
+    const contaB = await base.bankAccount.findFirstOrThrow({ where: { clientId: clienteB } });
+    const conta = await (base[modeloConta] as any).create({
+      data: { name: 'F06-B-NA-CATEGORIA-DE-A', dateDue: new Date('2019-07-15T00:00:00Z'), value: '555.55', done: true, clientId: clienteB, categoryId: raizA.id, bankAccountId: contaB.id },
+    });
+    (lado === 'despesas' ? criados.contas : criados.recebimentos).push(conta.id);
+    const linhas = await repo.somarPorCategoriaRaiz(lado, clienteA, '2019-07-01', '2019-07-31', 'mes');
+    expect(linhas.find((l) => l.id === raizA.id)).toBeUndefined();
+  });
+
+  it('revisão do módulo: extrato de A apontando para conta bancária de B não entra no saldo de A', async () => {
+    const contaB = await base.bankAccount.findFirstOrThrow({ where: { clientId: clienteB } });
+    const antes = Number(await repo.saldoAntesDe(clienteA, '1990-01-01'));
+    const e = await base.statement.create({
+      data: { value: '1', balance: '999.99', bankAccountId: contaB.id, clientId: clienteA, statementableId: 0, statementableType: 'BillPay', createdAt: new Date('1989-06-01T00:00:00Z') },
+    });
+    criados.extratos.push(e.id);
+    expect(Number(await repo.saldoAntesDe(clienteA, '1990-01-01'))).toBeCloseTo(antes, 2);
   });
 
   it('REQ-FLX-07: árvore CORROMPIDA de propósito (filha de B dentro da raiz de A) não vaza valores de B para A', async () => {
@@ -60,12 +90,14 @@ descrever('fluxo de caixa no banco (F03, integração)', () => {
   it('REQ-FLX-06: extrato lançado às 23h do ÚLTIMO dia do mês entra no saldo anterior (o legado cortava às 00:00)', async () => {
     const conta = await base.bankAccount.findFirstOrThrow({ where: { clientId: clienteA } });
     const antes = Number(await repo.saldoAntesDe(clienteA, '2000-01-01'));
+    const antesB = Number(await repo.saldoAntesDe(clienteB, '2000-01-01'));
     const e = await base.statement.create({
       data: { value: '1', balance: '123.45', bankAccountId: conta.id, clientId: clienteA, statementableId: 0, statementableType: 'BillPay', createdAt: new Date('1999-12-31T23:00:00Z') },
     });
     criados.extratos.push(e.id);
     expect(Number(await repo.saldoAntesDe(clienteA, '2000-01-01'))).toBeCloseTo(antes + 123.45, 2);
     expect(Number(await repo.saldoAntesDe(clienteA, '1999-12-31'))).toBeCloseTo(antes, 2); // corte do legado perderia
-    expect(Number(await repo.saldoAntesDe(clienteB, '2000-01-01'))).not.toBeCloseTo(antes + 123.45, 2); // outro cliente não soma
+    // outro cliente: medido antes e depois (a asserção anterior só falharia por coincidência numérica — revisão do módulo)
+    expect(Number(await repo.saldoAntesDe(clienteB, '2000-01-01'))).toBeCloseTo(antesB, 2);
   });
 });

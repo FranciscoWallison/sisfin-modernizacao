@@ -31,7 +31,7 @@ describe('F01 — janelas', () => {
     expect(janelaMensal('2028-03-05').primeiroMes).toEqual({ inicio: '2028-02-01', fim: '2028-02-29' });
   });
 
-  it.each(['2018-13', '2018-00', '18-02', '2018-2', 'fev', "2018-02' OR 1=1"])('start inválido "%s" → erro (vira 422)', (s) => {
+  it.each(['2018-13', '2018-00', '18-02', '2018-2', 'fev', "2018-02' OR 1=1", '0050-06', '0000-01', '2101-01', '1899-12'])('start inválido "%s" → erro (vira 422)', (s) => {
     expect(() => janelaMensal('2026-09-25', s)).toThrow(MesInvalidoError);
   });
 

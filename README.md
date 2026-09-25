@@ -58,7 +58,7 @@ servida duas vezes: só muda a API por trás. É o *Strangler Fig* visível.
 | http://localhost:3300/health | API nova |
 
 Login: `cliente1@user.com` / `secret`. Na versão nova já funcionam **dashboard, contas a pagar/receber, contas bancárias,
-plano de contas e extrato**; fluxo de caixa e bancos ainda não foram migrados (a tela mostra erro ou fica carregando).
+plano de contas, extrato e fluxo de caixa** (com o gráfico do dashboard); bancos ainda não foi migrado.
 Os dados do banco novo vêm do legado: `node tools/migrar-dados.mjs`.
 
 | Versão antiga | Versão nova |
@@ -88,7 +88,7 @@ Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios 
 |---|---|---|---|---|
 | contas | ✅ 19 regras, 9 dúvidas (todas respondidas), contrato | ✅ 8 casos + 4 regras n/a cobertas por tasks | ✅ requirements, design e tasks aprovados (hash `d854ed6545ef`) | ✅ **migrado** — paridade 9/9, espelho 15/15, 157 testes; revisado por segurança — ver [progresso](.specs/novo/contas/progresso.md) |
 | auth | 🟡 3 regras (controles de segurança) | ✅ 1 caso | 🟡 no REQ-CON-13 / ADR-005 | ⚪ |
-| fluxo-de-caixa | ✅ 7 regras, 4 dúvidas, contrato | ✅ 3 casos | 🟡 requirements, ADR-006, design e tasks aguardando aprovação | ⚪ |
+| fluxo-de-caixa | ✅ 8 regras, 5 dúvidas, contrato | ✅ 3 casos | ✅ aprovado (ADR-006) | ✅ **migrado** — paridade 3/3; tela e gráfico funcionando; DUV-FLX-005 pendente |
 | categorias · contas-bancarias · bancos · assinaturas | ⚪ | ⚪ | ⚪ | ⚪ |
 
 O passo a passo completo, com descobertas e lições, está no [diário de bordo](docs/diario-de-bordo.md).

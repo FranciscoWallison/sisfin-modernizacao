@@ -3,12 +3,16 @@
 //
 //   node tools/paridade.mjs                       # compara com "esperado" (legado em :8081)
 //   node tools/paridade.mjs --capturar            # grava o resultado atual em "esperado"
-//   node tools/paridade.mjs --base http://localhost:3000 contas/RN-CON-003   # filtra casos
+//   node tools/paridade.mjs --base http://localhost:3000 --alvo novo contas/RN-CON-003
+//
+// --alvo novo aplica sobre o "esperado" as divergências aprovadas em "divergencias" (cada uma cita um ADR):
+//   "divergencias": { "adr": "ADR-003", "esperado": { "delta_excluir": 10 } }
 //
 // Só usa HTTP: o mesmo caso roda contra o legado e contra o sistema novo.
 import { readdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
+import { BASE_PADRAO, criarCliente } from './lib/api.mjs';
 
 const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 const DIR = join(ROOT, '.specs', 'paridade');
@@ -16,8 +20,12 @@ const DIR = join(ROOT, '.specs', 'paridade');
 const args = process.argv.slice(2);
 const capturar = args.includes('--capturar');
 const baseIdx = args.indexOf('--base');
-const BASE = baseIdx >= 0 ? args[baseIdx + 1] : 'http://localhost:8081';
-const filtros = args.filter((a, i) => !a.startsWith('--') && i !== baseIdx + 1);
+const BASE = baseIdx >= 0 ? args[baseIdx + 1] : BASE_PADRAO;
+const alvoIdx = args.indexOf('--alvo');
+const ALVO = alvoIdx >= 0 ? args[alvoIdx + 1] : 'legado';
+if (!['legado', 'novo'].includes(ALVO)) throw new Error(`--alvo deve ser "legado" ou "novo" (recebi ${ALVO})`);
+const valoresDeOpcao = new Set([baseIdx, alvoIdx].filter((i) => i >= 0).map((i) => i + 1));
+const filtros = args.filter((a, i) => !a.startsWith('--') && !valoresDeOpcao.has(i));
 
 const walk = (d) =>
   readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirectory() ? walk(join(d, f)) : [join(d, f)]));
@@ -45,36 +53,20 @@ const projetar = (valor, campos) => {
   return Array.isArray(valor) ? valor.map(um) : um(valor);
 };
 
-const tokens = new Map();
-async function token(usuario) {
-  if (!tokens.has(usuario.email)) {
-    const r = await fetch(`${BASE}/api/access_token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(usuario),
-    });
-    if (!r.ok) throw new Error(`login de ${usuario.email} falhou: HTTP ${r.status}`);
-    tokens.set(usuario.email, (await r.json()).token);
-  }
-  return tokens.get(usuario.email);
-}
+const api = criarCliente(BASE);
 
 async function executar(caso) {
   const vars = { execucao: Date.now().toString(36) };
   const resultado = {};
   for (const passo of caso.passos) {
     const usuario = caso.usuarios[passo.usuario ?? 'padrao'];
-    const r = await fetch(BASE + substituir(passo.rota, vars), {
-      method: passo.metodo ?? 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${await token(usuario)}`,
-      },
-      body: passo.corpo ? JSON.stringify(substituir(passo.corpo, vars)) : undefined,
-    });
-    const texto = await r.text();
-    const corpo = texto ? JSON.parse(texto) : null;
+    const r = await api.requisitar(
+      usuario,
+      passo.metodo ?? 'GET',
+      substituir(passo.rota, vars),
+      passo.corpo ? substituir(passo.corpo, vars) : undefined,
+    );
+    const corpo = r.corpo;
     for (const [nome, caminho] of Object.entries(passo.salvar ?? {})) vars[nome] = pegar(corpo, caminho);
     if (passo.registrar !== false) {
       resultado[passo.nome] = { status: r.status };
@@ -104,21 +96,32 @@ for (const arquivo of casos) {
     console.log(`💥 ${nome}: ${e.message}`);
     continue;
   }
-  if (capturar) {
+  const esperado = ALVO === 'novo' ? { ...caso.esperado, ...(caso.divergencias?.esperado ?? {}) } : caso.esperado;
+  if (capturar && ALVO === 'novo') {
+    console.log(`⛔ ${nome}: --capturar só grava a partir do legado (o oráculo)`);
+    falhas++;
+  } else if (capturar) {
     caso.esperado = atual;
     caso.capturado = { em: new Date().toISOString().slice(0, 10), de: BASE };
     writeFileSync(arquivo, JSON.stringify(caso, null, 2) + '\n');
     console.log(`📸 ${nome}: capturado`);
-  } else if (isDeepStrictEqual(atual, caso.esperado)) {
+  } else if (isDeepStrictEqual(atual, esperado)) {
     console.log(`✅ ${nome}`);
   } else {
     falhas++;
+    const modulo = nome.split('/')[0];
     console.log(`❌ ${nome}`);
-    for (const k of new Set([...Object.keys(caso.esperado ?? {}), ...Object.keys(atual)])) {
-      if (!isDeepStrictEqual(atual[k], caso.esperado?.[k]))
-        console.log(`   ${k}\n     esperado: ${JSON.stringify(caso.esperado?.[k])}\n     atual:    ${JSON.stringify(atual[k])}`);
+    // Mensagem pensada para o agente: onde está a regra e o que fazer com a divergência
+    console.log(
+      `   Regra(s) ${caso.rn.join(', ')} em .specs/legado/modulos/${modulo}/regras.md. ` +
+        `Se a divergência for intencional, registre-a num ADR em .specs/decisoes/ e no bloco "divergencias" do caso; ` +
+        `senão, corrija a implementação. Nunca edite o "esperado" à mão: ele é capturado do legado.`,
+    );
+    for (const k of new Set([...Object.keys(esperado ?? {}), ...Object.keys(atual)])) {
+      if (!isDeepStrictEqual(atual[k], esperado?.[k]))
+        console.log(`   ${k}\n     esperado: ${JSON.stringify(esperado?.[k])}\n     atual:    ${JSON.stringify(atual[k])}`);
     }
   }
 }
-console.log(`\n${casos.length} caso(s), ${falhas} falha(s) — ${BASE}`);
+console.log(`\n${casos.length} caso(s), ${falhas} falha(s) — ${BASE} (alvo: ${ALVO})`);
 process.exit(falhas ? 1 : 0);

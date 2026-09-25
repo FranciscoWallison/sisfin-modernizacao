@@ -46,7 +46,8 @@
 ### RN-CON-007 — Atualização do saldo é atômica e com lock; o extrato fica fora da transação
 - **Regra:** `addBalance` abre transação e trava a linha da conta bancária antes de somar; o `Statement` é criado depois do commit.
 - **Evidência:** `legacy/app/Repositories/BankAccountRepositoryEloquent.php:31-36` (transação + `LockTableCriteria`) e `legacy/app/Listeners/BankAccountUpdateBalanceListener.php:48` (extrato após o commit)
-- **Confiança:** alta (código)
+- **Sonda:** `node tools/oraculo-sql.mjs PUT /api/bill_pays/213 …` mostra a ordem real: `UPDATE bill_pays` **fora** de transação → `START TRANSACTION` → `SELECT … FOR UPDATE` em `bank_accounts` → `UPDATE bank_accounts` → `COMMIT` → `INSERT INTO statements` **fora** de transação ✅
+- **Confiança:** alta (código + SQL observado)
 - **Suspeita de bug?** sim — falha entre os dois passos deixa saldo e extrato divergentes (DUV-CON-005)
 
 ### RN-CON-008 — Contas são isoladas por cliente (tenant)
@@ -81,3 +82,24 @@
 - **Sonda:** `SHOW COLUMNS` no oráculo → `bill_pays.done Default NULL` · `bill_receives.done Default 0` ✅
 - **Confiança:** alta
 - **Suspeita de bug?** sim — inofensivo enquanto o ORM sempre envia `done`, mas a assimetria não deve ser migrada
+
+### RN-CON-013 — Categoria e conta bancária não são obrigatórias na validação, mas o banco exige → HTTP 500
+- **Regra:** `category_id` e `bank_account_id` não têm `required`; sem eles a validação passa e o `INSERT` falha no MySQL (`Field 'category_id' doesn't have a default value`), devolvendo **500** em vez de 422.
+- **Evidência:** `legacy/app/Http/Requests/BillPayRequest.php:37-44` (só `Rule::exists`, sem `required`)
+- **Sonda:** `POST /api/bill_pays` sem `category_id`/`bank_account_id` → 500; log: `SQLSTATE[HY000]: General error: 1364` ✅
+- **Confiança:** alta
+- **Suspeita de bug?** sim — erro do cliente reportado como erro do servidor
+
+### RN-CON-014 — Categoria e conta bancária precisam pertencer ao tenant do usuário
+- **Regra:** `category_id` e `bank_account_id` são validados com `exists … where client_id = <cliente do usuário>`; de outro cliente → **422** `"The selected bank account id is invalid."`
+- **Evidência:** `legacy/app/Http/Requests/BillPayRequest.php:37-44`
+- **Sonda:** `bank_account_id=1` (de outro cliente) → 422 ✅; SQL observado: `select count(*) … from bank_accounts where id = 4 and (client_id = 2)`
+- **Confiança:** alta
+- **Suspeita de bug?** não — controle de segurança explícito que o TO-BE precisa manter
+
+### RN-CON-015 — Valor negativo é aceito e inverte o efeito no saldo
+- **Regra:** `value` só exige `numeric`; uma conta a pagar de −10 marcada como paga **credita** +10 na conta bancária.
+- **Evidência:** `legacy/app/Http/Requests/BillPayRequest.php:32` (`'value' => 'required|numeric'`) + `legacy/app/Listeners/BankAccountUpdateBalanceListener.php:73`
+- **Sonda:** `POST` com `value=-10, done=true` → 201; ao desmarcar, extrato `value=-10` ✅
+- **Confiança:** alta
+- **Suspeita de bug?** provável — conta a pagar negativa é uma receita disfarçada (DUV-CON-008)

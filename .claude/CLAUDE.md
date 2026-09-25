@@ -20,6 +20,14 @@ Processo: engenharia reversa (AS-IS) → spec (TO-BE) → implementação por ta
    (`node tools/paridade.mjs` e `node tools/paridade.mjs --base <url-do-novo>`).
 8. Decisão de corrigir/descartar comportamento do legado vira ADR em `.specs/decisoes/`.
 9. Rode `node tools/rastreabilidade.mjs` antes de abrir PR: não pode haver regra sem requisito nem requisito sem teste.
+10. Código de módulo novo fica em `api/src/modules/<mod>/` (ou `web/src/modules/<mod>/`); o hook bloqueia a edição
+    enquanto `.specs/novo/<mod>/tasks.md` não estiver aprovado pelo humano (`tools/aprovar-tasks.mjs` — nunca rode você).
+
+## Ferramentas (harness — ver `docs/harness.md`)
+- `node tools/paridade.mjs [--base URL] [--alvo legado|novo] [filtro]` — golden master; `--alvo novo` aplica as `divergencias` aprovadas.
+- `node tools/oraculo-sql.mjs MÉTODO /rota [json]` — mostra o SQL que a requisição dispara no legado (no Git Bash: `MSYS_NO_PATHCONV=1`).
+- `node tools/rastreabilidade.mjs [--strict]` — matriz RN → REQ → Task → Paridade.
+- `node --test tools/testes/harness.test.mjs` — testes do próprio harness.
 
 ## Módulos (ordem de migração)
 1. `contas` — contas a pagar/receber, repetição, saldo da conta bancária, extrato

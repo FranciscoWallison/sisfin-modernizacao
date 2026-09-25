@@ -1,7 +1,26 @@
 {
   "permissions": {
     "deny": [
-      "Edit(/legacy/**)"
+      "Edit(/legacy/**)",
+      "Bash(node tools/aprovar-tasks.mjs:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/tools/hooks/antes-de-editar.mjs\"" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/tools/hooks/depois-de-editar.mjs\"" }
+        ]
+      }
     ]
   }
 }

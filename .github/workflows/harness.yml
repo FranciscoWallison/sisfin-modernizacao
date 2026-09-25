@@ -1,0 +1,46 @@
+name: harness
+
+# Sensores computacionais em todo PR: o harness funciona, o oráculo sobe e a paridade passa.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  harness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Testes do próprio harness (hooks, aprovação por hash)
+        run: node --test tools/testes/harness.test.mjs
+
+      - name: Rastreabilidade RN → REQ → Task → Paridade
+        # Sem --strict enquanto o módulo contas não tem TO-BE; ligar quando a 1ª spec for aprovada
+        run: node tools/rastreabilidade.mjs
+
+      - name: Subir o oráculo (legado Laravel 5.3 + MySQL 5.7)
+        run: docker compose up -d --build
+
+      - name: Esperar o oráculo
+        run: |
+          for i in $(seq 1 60); do
+            if docker compose logs legacy-app 2>&1 | grep -q "resuming normal operations"; then exit 0; fi
+            sleep 5
+          done
+          docker compose logs legacy-app
+          exit 1
+
+      - name: Paridade contra o legado
+        run: node tools/paridade.mjs
+
+      - name: Logs do oráculo em caso de falha
+        if: failure()
+        run: |
+          docker compose logs legacy-app | tail -100
+          docker compose exec -T legacy-app sh -c 'tail -50 storage/logs/*.log' || true

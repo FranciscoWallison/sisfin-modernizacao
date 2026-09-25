@@ -1,0 +1,114 @@
+{
+  "rn": [
+    "RN-CON-013",
+    "RN-CON-014",
+    "RN-CON-015"
+  ],
+  "descricao": "Validação da criação: sem categoria/conta → 500 (legado); conta de outro tenant → 422; valor negativo aceito e pago credita o saldo.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    },
+    "outro_cliente": {
+      "email": "cliente3@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "categoria",
+      "rota": "/api/category_expenses",
+      "salvar": {
+        "categoria": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "conta_bancaria",
+      "rota": "/api/bank_accounts",
+      "salvar": {
+        "conta": "data.0.id",
+        "saldo_0": "data.0.balance"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "conta_de_outro_tenant",
+      "usuario": "outro_cliente",
+      "rota": "/api/bank_accounts",
+      "salvar": {
+        "conta_alheia": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "sem_categoria_e_conta",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-013-{{execucao}}",
+        "date_due": "2027-06-01",
+        "value": 10,
+        "done": false
+      }
+    },
+    {
+      "nome": "conta_bancaria_de_outro_tenant",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-014-{{execucao}}",
+        "date_due": "2027-06-01",
+        "value": 10,
+        "done": false,
+        "category_id": "{{categoria}}",
+        "bank_account_id": "{{conta_alheia}}"
+      },
+      "caminho": "bank_account_id"
+    },
+    {
+      "nome": "valor_negativo_pago",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-015-{{execucao}}",
+        "date_due": "2027-06-01",
+        "value": -10,
+        "done": true,
+        "category_id": "{{categoria}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "saldo_1",
+      "rota": "/api/bank_accounts/{{conta}}",
+      "salvar": {
+        "saldo_1": "data.balance"
+      },
+      "registrar": false
+    }
+  ],
+  "derivar": {
+    "delta_valor_negativo_pago": "saldo_1 - saldo_0"
+  },
+  "esperado": {
+    "sem_categoria_e_conta": {
+      "status": 500
+    },
+    "conta_bancaria_de_outro_tenant": {
+      "status": 422,
+      "corpo": [
+        "The selected bank account id is invalid."
+      ]
+    },
+    "valor_negativo_pago": {
+      "status": 201
+    },
+    "delta_valor_negativo_pago": 10
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  }
+}

@@ -46,12 +46,17 @@ curl -X POST http://localhost:8081/api/access_token \
 - App: http://localhost:8081 · MySQL: `localhost:33061` (`sisfin`/`sisfin`)
 - Resetar os dados: `docker compose down -v && docker compose up -d` (seed determinístico, semente 42)
 
+## Harness
+
+Guias e sensores que deixam os agentes trabalharem com segurança — hooks de pré/pós-edição, aprovação de plano
+amarrada a hash, observabilidade de SQL do oráculo, CI. Mapa completo e análise de viabilidade em [`docs/harness.md`](docs/harness.md).
+
 ## Paridade (golden master)
 
 ```bash
 node tools/paridade.mjs                                   # compara com o esperado (legado em :8081)
 node tools/paridade.mjs --capturar RN-CON-009             # regrava o esperado de um caso a partir do legado
-node tools/paridade.mjs --base http://localhost:3000      # mesmos casos contra o sistema novo
+node tools/paridade.mjs --base http://localhost:3000 --alvo novo  # contra o sistema novo, com as divergências aprovadas
 ```
 
 Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios dados, guardam variáveis
@@ -62,7 +67,7 @@ Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios 
 
 | Módulo | AS-IS | Paridade | TO-BE | Implementado |
 |---|---|---|---|---|
-| contas | 🟡 12 regras, 7 dúvidas | 🟡 6 casos (9 regras) | ⚪ | ⚪ |
+| contas | ✅ 15 regras, 8 dúvidas | 🟡 7 casos (12 regras) | 🟡 requirements em rascunho (ADR-003 proposto) | ⚪ |
 | categorias · contas-bancarias · bancos · fluxo-de-caixa · assinaturas · auth | ⚪ | ⚪ | ⚪ | ⚪ |
 
 ### Achados até agora (pelas sondas no oráculo)
@@ -70,5 +75,8 @@ Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios 
 - **RN-CON-009** — mover uma conta paga para outra conta bancária não move o saldo.
 - **RN-CON-010** — excluir uma conta paga não estorna o saldo e deixa extrato órfão.
 - **RN-CON-006** — conta criada paga com repetição: todas as parcelas futuras nascem pagas e debitam o saldo hoje.
+- **RN-CON-007** — o SQL observado mostra conta e extrato gravados fora da transação do saldo.
+- **RN-CON-013** — conta sem categoria/conta bancária devolve 500 (erro de banco) em vez de 422.
+- **RN-CON-015** — valor negativo é aceito; pagar uma conta a pagar negativa credita o saldo.
 - **RN-CON-011** — dinheiro armazenado em `FLOAT`.
 - **RN-CON-012** — `->defalt(false)` numa migration: erro de digitação que o Laravel 5.3 aceitou em silêncio.

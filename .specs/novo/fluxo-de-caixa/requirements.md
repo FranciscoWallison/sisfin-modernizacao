@@ -1,9 +1,9 @@
-Status: rascunho — aguardando aprovação do Francisco
+Status: aprovado — Francisco, 25/09/2026 (com o plano, hash e486869c0978)
 
 # Requirements — módulo `fluxo-de-caixa` (TO-BE)
 
 > Gerado de `.specs/legado/modulos/fluxo-de-caixa/regras.md` (RN-FLX-001..007) e `duvidas.md` (DUV-FLX-001..004).
-> Contrato a preservar: `contrato.md` do módulo (mesmas rotas, mesmo formato). Correções: ADR-006 (proposto).
+> Contrato a preservar: `contrato.md` do módulo (mesmas rotas, mesmo formato). Correções: ADR-006 (aceito).
 > Aceite: `.specs/paridade/fluxo-de-caixa/` com `--alvo novo` (divergências do ADR-006 registradas nos casos).
 
 ### REQ-FLX-01 — Próximos 30 dias, por dia
@@ -15,7 +15,7 @@ Origem: RN-FLX-001 · Decisão: **manter**
 
 Aceite: `RN-FLX-001-proximos-30-dias.json` (paridade exata) e espelho de leitura.
 
-### REQ-FLX-02 — Janela do fluxo mensal a partir do mês atual *(proposta — DUV-FLX-001)*
+### REQ-FLX-02 — Janela do fluxo mensal a partir do mês atual
 Origem: RN-FLX-002 · Decisão: **corrigir** — ADR-006
 
 - QUANDO `GET /api/cash_flows` vier sem parâmetro, O SISTEMA DEVE usar início = primeiro dia do **mês atual** (UTC) e
@@ -32,7 +32,7 @@ Origem: RN-FLX-003 · Decisão: **manter**
 
 Aceite: `RN-FLX-003-a-007-janela-2018.json` (março +34, dezembro +3, janeiro/2019 fora) com `?start=2018-02`.
 
-### REQ-FLX-04 — "Primeiro mês" = mês anterior inteiro, só o realizado *(proposta — DUV-FLX-002)*
+### REQ-FLX-04 — "Primeiro mês" = mês anterior inteiro, só o realizado
 Origem: RN-FLX-004 · Decisão: **corrigir** — ADR-006
 
 - O SISTEMA DEVE incluir, como mês anterior ao início, a soma das contas **pagas** com vencimento em **qualquer dia**
@@ -41,14 +41,14 @@ Origem: RN-FLX-004 · Decisão: **corrigir** — ADR-006
 Aceite: `RN-FLX-003-a-007-janela-2018.json` → `primeiro_mes_receitas_delta: 15` (legado: 5 — divergência ADR-006).
 
 ### REQ-FLX-05 — Agregação por categoria raiz
-Origem: RN-FLX-005 · Decisão: **manter**
+Origem: RN-FLX-005, RN-FLX-008 · Decisão: **manter** (RN-FLX-008 aguarda decisão — DUV-FLX-005; até lá, fiel ao legado)
 
 - O SISTEMA DEVE somar cada valor na categoria **raiz** da árvore da conta; filhas não aparecem sozinhas;
   `categories_period` ordenado por período e nome.
 
 Aceite: `RN-FLX-003-a-007-janela-2018.json` (`raiz_despesa_marco_delta`, `categoria_filha_nao_aparece_sozinha`).
 
-### REQ-FLX-06 — Saldo antes do primeiro mês *(corte proposto — DUV-FLX-003)*
+### REQ-FLX-06 — Saldo antes do primeiro mês
 Origem: RN-FLX-006 · Decisão: **manter** a regra (último extrato por conta bancária, por data de lançamento) +
 **corrigir** o corte para incluir o último dia inteiro — ADR-006
 
@@ -59,7 +59,7 @@ Aceite: `RN-FLX-003-a-007-janela-2018.json` (`saldo_antes_do_primeiro_mes_inalte
 extratos lançados no último dia do mês (não observável pela API: extratos têm data de lançamento = agora).
 
 ### REQ-FLX-07 — Isolamento entre clientes
-Origem: RN-FLX-007 · Decisão: **manter** o resultado + **corrigir** a defesa (proposta — DUV-FLX-004) — ADR-006
+Origem: RN-FLX-007 · Decisão: **manter** o resultado + **corrigir** a defesa (DUV-FLX-004) — ADR-006
 
 - O SISTEMA DEVE filtrar por cliente a categoria raiz, as filhas **e** as contas (defesa em profundidade: com árvore
   íntegra o resultado é o mesmo do legado; com árvore corrompida, não vaza).

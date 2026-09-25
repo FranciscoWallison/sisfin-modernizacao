@@ -46,3 +46,13 @@
 - **Evidência:** SQL observado: `client_id = 2` só em `category_*` (raiz) e na subconsulta de profundidade; nenhum filtro em `childorself` nem em `bill_*`
 - **Sonda:** outro cliente (`cliente3`) não vê nada do que o cliente 2 criou em 2018 ✅; no banco do oráculo, **0** raízes com filhas de outro cliente
 - **Confiança:** alta · **Risco:** a criação de categoria no legado desliga o tenant (inventário) — uma árvore corrompida vazaria valores entre clientes
+
+### RN-FLX-008 — Categorias raiz com o MESMO NOME: a segunda some da tabela por categoria
+- **Regra:** `formatCategories` deduplica por **nome** (`unique('name')->pluck('name', 'id')`): se duas categorias raiz têm o
+  mesmo nome, só a primeira aparece em `categories_period`. O `period_list` (total do mês) continua somando as duas —
+  a tabela da tela fica inconsistente (categorias não fecham com o total).
+- **Evidência:** `legacy/app/Repositories/Traits/CashFlowRepositoryTrait.php:88`
+- **Sonda:** duas categorias "PAR-DUP-…" (ids 121 e 122) com contas de 100 e 200 em jun/2018 → `categories_period` mostra só
+  a 121 (100); `period_list` de 2018-06 mostra 300 ✅ (achado ao portar a montagem — F02)
+- **Paridade:** n/a — o sistema novo ainda não cria categorias (módulo `categorias`); coberto por teste unitário (F02)
+- **Confiança:** alta · **Suspeita de bug?** **sim** (DUV-FLX-005)

@@ -66,8 +66,8 @@ console.table(linhas);
 const orfaos = {
   'RN sem requisito': regras.filter((rn) => !rnComReq.has(rn)),
   'RN sem caso de paridade': regras.filter((rn) => !rnComParidade.has(rn) && !semParidadeHttp.has(rn)),
-  'RN com paridade n/a sem task que a cubra (Txx)': [...semParidadeHttp]
-    .filter(([, justificativa]) => !/\bT\d{2}\b/.test(justificativa))
+  'RN com paridade n/a sem task que a cubra (Txx, Fxx…)': [...semParidadeHttp]
+    .filter(([, justificativa]) => !/\b[A-Z]\d{2}\b/.test(justificativa)) // T01, F02… (id da task no plano do módulo)
     .map(([rn]) => rn),
   'REQ sem task': [...requisitos.keys()].filter((r) => !reqComTask.has(r)),
 };

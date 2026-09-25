@@ -1,9 +1,9 @@
-Status: rascunho — aguardando aprovação do Francisco
+Status: aprovado — Francisco, 25/09/2026 (com o plano, hash e486869c0978). Mudanças posteriores no fim do arquivo.
 
 # Design — módulo `fluxo-de-caixa` (TO-BE)
 
 > Implementa `requirements.md` (REQ-FLX-01..07). Reaproveita a fundação do módulo `contas` (auth-compat, tenant,
-> formato HTTP, sensores). Contrato: `.specs/legado/modulos/fluxo-de-caixa/contrato.md`. Correções: ADR-006.
+> formato HTTP, sensores). Contrato: `.specs/legado/modulos/fluxo-de-caixa/contrato.md`. Correções: ADR-006 (aceito).
 
 ## 1. Estrutura (`api/src/modules/fluxo-de-caixa/`)
 
@@ -85,3 +85,10 @@ O "primeiro mês" entra antes dos demais, como o legado faz (`prepend`).
 | Árvore de categorias inconsistente (legado desliga o tenant ao criar categoria) | `client_id` nas três tabelas + checagem do ETL + teste com árvore corrompida |
 | `parent_id IS NULL` ≠ profundidade 0 numa árvore inconsistente | Teste de integração compara as duas definições no banco migrado |
 | Diferença de ordenação por nome (collation MySQL × Postgres) | Espelho do `monthly`; ordenação de `categories_period` testada com nomes acentuados |
+
+## Mudanças após a aprovação
+
+| Data | Mudança | Motivo |
+|---|---|---|
+| 25/09/2026 | Ordem das categorias: `period, lower(name), name, id` | MySQL (collation `unicode_ci`) ordena sem diferenciar maiúsculas; e o empate de nome não era determinístico em nenhum dos dois bancos — o `id` por último torna estável a "primeira ocorrência" da RN-FLX-008 (F04) |
+| 25/09/2026 | Tokens emitidos antes do `iss` fixo (revisão do código de `contas`) passaram a dar 401 | A tela nova pediu login de novo uma vez — efeito esperado (F05) |

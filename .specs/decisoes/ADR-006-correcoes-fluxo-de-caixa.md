@@ -1,6 +1,6 @@
 # ADR-006 — Comportamentos do legado corrigidos no módulo `fluxo-de-caixa`
 
-- **Status:** proposto — aguardando aprovação do Francisco
+- **Status:** aceito — aprovado — Francisco, 25/09/2026 (com o plano, hash e486869c0978)
 - **Data:** 25/09/2026
 
 ## Contexto
@@ -11,7 +11,7 @@ o "primeiro mês" como o mês anterior a hoje — ou seja, o front espera a jane
 Também foram provados por sonda: o "primeiro mês" só considera o último dia (RN-FLX-004) e o corte do saldo anterior
 exclui o último dia (RN-FLX-006). O isolamento depende da integridade da árvore de categorias (RN-FLX-007).
 
-## Decisão (proposta)
+## Decisão
 
 | Regra | Legado | Sistema novo | Dúvida |
 |---|---|---|---|

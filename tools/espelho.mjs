@@ -53,6 +53,9 @@ const ROTAS = [
   ['c3', '/api/bank_accounts?page=1&orderBy=balance&sortedBy=desc&search=&include=bank&limit=5'],
   ['c3', '/api/statements'],
   ['c3', `/api/bank_accounts/${contaDoC1}`], // conta de OUTRO cliente → 404 nos dois
+  ['c1', '/api/cash_flows/monthly'], // gráfico do dashboard (fluxo-de-caixa, sem divergência)
+  ['c3', '/api/cash_flows/monthly'],
+  // /api/cash_flows fica FORA do espelho: diverge por decisão (ADR-006 — janela e primeiro mês)
 ];
 
 let falhas = 0;

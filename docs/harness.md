@@ -23,6 +23,7 @@ não depende de alguém escrever os testes certos: ele compara com a realidade (
 | Oráculo reproduzível | infraestrutura | comportamento | `docker-compose.yml` + `DeterministicSeeder` | ✅ |
 | Golden master | sensor computacional | comportamento | `tools/paridade.mjs` + `.specs/paridade/` | ✅ 8 casos |
 | Observabilidade do oráculo | sensor computacional | comportamento | `tools/oraculo-sql.mjs` | ✅ |
+| **Espelho de leitura** | sensor computacional | comportamento | `tools/espelho.mjs` — logo após o ETL, cada GET tem de responder **igual** (valores) no legado e no novo | ✅ 12/12 rotas (T08) |
 | Rastreabilidade | sensor computacional | comportamento | `tools/rastreabilidade.mjs` | ✅ |
 | Validação de specs ao editar | sensor computacional | manutenibilidade | hook `depois-de-editar` | ✅ |
 | Typecheck ao editar | sensor computacional | manutenibilidade | hook `depois-de-editar` | ✅ ~4 s por edição em `api/` |
@@ -39,6 +40,7 @@ docker compose up -d --build                         # oráculo em :8081 (MySQL 
 node tools/paridade.mjs                              # golden master contra o legado
 node tools/paridade.mjs --base http://localhost:3300 --alvo novo  # contra o novo, com divergências aprovadas (ADR)
 node tools/oraculo-sql.mjs PUT /api/bill_pays/12 '{…}' # SQL que a requisição dispara no legado
+node tools/migrar-dados.mjs && node tools/espelho.mjs  # ETL e comparação de leituras legado × novo
 node tools/rastreabilidade.mjs                       # RN → REQ → Task → Paridade
 node tools/aprovar-tasks.mjs contas "Francisco"      # HUMANO aprova o plano (grava o hash)
 node --test tools/testes/harness.test.mjs            # testes do próprio harness

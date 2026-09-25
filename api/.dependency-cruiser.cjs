@@ -31,6 +31,15 @@ module.exports = {
       to: { path: '(^|/)node_modules/@prisma/client' },
     },
     {
+      name: 'infra-usa-prisma-com-tenant',
+      severity: 'error',
+      comment:
+        'Repositórios de infra/ usam o cliente COM filtro de tenant: injete PRISMA_TENANT (shared/tenant/prisma-tenant). ' +
+        'O PrismaService puro não filtra por cliente e só pode ser usado em shared/ (auth, tenant). Ver design.md §4.',
+      from: { path: '(^|/)(modules/[^/]+|compat)/infra/' },
+      to: { path: '(^|/)shared/prisma/prisma\\.service' },
+    },
+    {
       name: 'sem-ciclos',
       severity: 'error',
       comment: 'Dependência circular. Extraia o que é comum para domain/ ou shared/.',

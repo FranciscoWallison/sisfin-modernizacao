@@ -547,6 +547,33 @@ plano com `node tools/aprovar-tasks.mjs contas "Francisco"`. Depois, Fase A (T01
   passando no sistema novo**, sobre os dados migrados pelo ETL (a senha `secret` do seed funciona com o hash do PHP).
 - Limite registrado: lockout, blacklist e rate limit em memória valem por instância (Redis quando escalar).
 
+## Etapa 11 — T07 tenant e T08 leituras compatíveis · 25/09/2026
+
+**Objetivo:** o isolamento entre clientes num único ponto, e as leituras que `contas` e a paridade usam.
+
+- **T07:** `regras-tenant.ts` é uma **função pura** que decide, operação a operação do Prisma, como restringir ao cliente
+  (lista fechada de modelos; `findUnique`/`update`/`delete` com *where* único estendido; `clientId` sempre sobrescrito
+  em `create` e removido em `update`; `connect` proibido; operação desconhecida ou **sem cliente → erro**). A extensão só aplica.
+  `@ComCliente()` = JWT + cliente obrigatório (403) + contexto em `AsyncLocalStorage`.
+- **Três armadilhas pegas pelos testes:**
+  1. Primeira versão chamava `base[modelo][op]()` dentro da extensão — isso **roda fora da transação interativa**.
+     Trocado por `query(args)`; o teste de integração prova que o filtro vale dentro de `$transaction` (a T12 depende disso).
+  2. **As promessas do Prisma são preguiçosas**: só executam no `.then`. Com `await` fora do escopo do `AsyncLocalStorage`,
+     a extensão não acha o cliente. Criado `ContextoCliente.executarAsync` e um teste que documenta a armadilha.
+  3. **O próprio teste quase apagou dados:** com o `beforeAll` falhando, `deleteMany({ where: { id: undefined } })` no
+     `afterAll` vira "apague **todas** as categorias" — quem impediu foi a FK. Limpeza agora só com id definido.
+- **T08:** `/api/bank_accounts` (+ `/:id`, `/lists`), `/api/category_expenses|revenues` (árvore), `/api/statements`
+  (+ `statement_data`) em `compat/`, com repositório em `compat/infra/` sob as mesmas regras.
+- **Peça nova de harness — espelho de leitura** (`tools/espelho.mjs`): logo após o ETL os bancos têm os mesmos dados, então
+  cada GET deve responder **igual em valores**. Resultado: 11/12 de primeira; a diferença era o link de paginação sem
+  `orderBy`/`sortedBy` (o paginador do Laravel preserva a query). Corrigido → **12/12 idênticas**.
+- Achado de outro módulo: criar categoria no legado desliga o filtro de tenant — registrado no inventário para `categorias`.
+- **O sensor de SQL cru deu falso positivo** (achou `$queryRaw` num *comentário*). Ajustado para ignorar comentários — e
+  provado que ainda pega uso real (arquivo de teste com `$queryRaw` fora de `infra/` → falha). No meio do ajuste, uma edição
+  feita pelo shell perdeu as barras invertidas da regex e a suíte **deixou de compilar em silêncio**: o sinal foi o total
+  de testes cair de 74 para 71. Conferir a contagem de testes, não só "passou", virou hábito.
+- **Fase A concluída (T01–T08).**
+
 ---
 
 ## Lições até aqui
@@ -560,3 +587,6 @@ plano com `node tools/aprovar-tasks.mjs contas "Francisco"`. Depois, Fase A (T01
 6. **Sensor inferencial + conferência humana.** O revisor LLM achou problemas que nenhum sensor computacional pegaria
    (corrida, bypass de tenant); cada afirmação dele sobre o legado foi conferida antes de virar requisito.
 7. **Sensor que nunca rodou não está testado.** O typecheck do hook, escrito antes de existir código, estava quebrado.
+8. **Compare valores, não só formatos.** Com os dois bancos iguais depois do ETL, o espelho de leitura pega diferenças
+   que um teste de contrato (só formato) deixaria passar.
+9. **Teste que limpa dados precisa de trava.** Um `where` com `undefined` vira "sem filtro".

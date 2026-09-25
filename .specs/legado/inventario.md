@@ -25,6 +25,12 @@
 | assinaturas | `Site\SubscriptionsController`, `Api\IuguController`, `app/Iugu/*` | — | ⚪ |
 | auth | `Api\AuthController`, `Auth\*`, `Site\Auth\*`, `app/Jwt` | — | ⚪ |
 
+## Achados de outros módulos (para quando forem migrados)
+
+| Módulo | Achado | Evidência |
+|---|---|---|
+| categorias | A criação de categoria **desliga o filtro de tenant** durante a operação (`$model::$enableTenant = false`) para montar o nested set; investigar se filho pode ser criado sob pai de outro cliente | `legacy/app/Repositories/Traits/CategoryRepositoryTrait.php` (`create`) |
+
 ## Eventos → listeners (`legacy/app/Providers/EventServiceProvider.php:25-41`)
 
 | Evento | Listener | Efeito |

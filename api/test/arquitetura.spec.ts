@@ -36,7 +36,10 @@ describe('arquitetura (T02)', () => {
     const problemas: string[] = [];
     for (const arq of arquivos(join(raiz, 'src'))) {
       const rel = relative(raiz, arq).replaceAll('\\', '/');
-      const fonte = readFileSync(arq, 'utf8');
+      // sem comentários: a menção a $queryRaw num comentário não é uso (falso positivo encontrado na T07)
+      const fonte = readFileSync(arq, 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/(^|[^:])\/\/.*$/gm, '$1');
       if (!/\$(queryRaw|executeRaw)(Unsafe)?\b/.test(fonte)) continue;
       if (/\$(queryRaw|executeRaw)Unsafe\b/.test(fonte)) problemas.push(`${rel}: *Unsafe é proibido (injeção de SQL)`);
       if (!/\/infra\//.test(rel)) problemas.push(`${rel}: SQL cru fora de infra/ — mova para um repositório em infra/`);

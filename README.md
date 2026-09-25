@@ -46,6 +46,25 @@ curl -X POST http://localhost:8081/api/access_token \
 - App: http://localhost:8081 · MySQL: `localhost:33061` (`sisfin`/`sisfin`)
 - Resetar os dados: `docker compose down -v && docker compose up -d` (seed determinístico, semente 42)
 
+## As duas versões lado a lado
+
+A **mesma tela** do sistema de 2017 (SPA Vue 1, compilado de `legacy/` — o bundle nunca tinha sido versionado),
+servida duas vezes: só muda a API por trás. É o *Strangler Fig* visível.
+
+| Endereço | O quê |
+|---|---|
+| http://localhost:8082/app#!/login | **Versão antiga** — tela → API Laravel 5.3 (:8081) · selo vermelho |
+| http://localhost:8083/app#!/login | **Versão nova** — mesma tela → API NestJS (:3300) · selo verde |
+| http://localhost:3300/health | API nova |
+
+Login: `cliente1@user.com` / `secret`. Na versão nova, **contas bancárias, plano de contas e extrato** já funcionam;
+contas a pagar/receber chegam na Fase B; fluxo de caixa e bancos ainda não foram migrados (a tela mostra erro).
+Os dados do banco novo vêm do legado: `node tools/migrar-dados.mjs`.
+
+| Versão antiga | Versão nova |
+|---|---|
+| ![antiga](docs/imgs/spa-antigo-contas-bancarias.png) | ![nova](docs/imgs/spa-novo-extrato.png) |
+
 ## Harness
 
 Guias e sensores que deixam os agentes trabalharem com segurança — hooks de pré/pós-edição, aprovação de plano

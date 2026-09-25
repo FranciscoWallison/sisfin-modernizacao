@@ -73,7 +73,33 @@ services:
       DATABASE_URL: postgresql://sisfin:sisfin@api-db:5432/sisfin
       # Só desenvolvimento local. Diferente do segredo do legado (ADR-005): tokens não são intercambiáveis
       JWT_SECRET: sisfin-api-segredo-local-de-desenvolvimento-nao-usar-em-producao
-      CORS_ORIGINS: http://localhost:8081
+      CORS_ORIGINS: http://localhost:8081,http://localhost:8083
+
+  # A MESMA tela do legado (SPA Vue 1 compilado de legacy/) servida duas vezes — só muda a API por trás.
+  # É o Strangler Fig visível: o front não sabe qual backend atende.
+  spa-antigo:
+    build:
+      context: .
+      dockerfile: docker/spa/Dockerfile
+      target: servidor
+      args:
+        API_URL: http://localhost:8081/api
+        ROTULO: "Versão antiga — API Laravel 5.3 (:8081)"
+        COR: "#c62828"
+    depends_on: [legacy-app]
+    ports: ["8082:80"]
+
+  spa-novo:
+    build:
+      context: .
+      dockerfile: docker/spa/Dockerfile
+      target: servidor
+      args:
+        API_URL: http://localhost:3300/api
+        ROTULO: "Versão nova — API NestJS (:3300)"
+        COR: "#2e7d32"
+    depends_on: [api]
+    ports: ["8083:80"]
 
 volumes:
   legacy-db:

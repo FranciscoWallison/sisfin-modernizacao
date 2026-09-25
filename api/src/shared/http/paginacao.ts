@@ -12,6 +12,12 @@ export interface MetaPaginacao {
   };
 }
 
+/** `limit` da query → 1..100 (legado: >0, senão 15; teto contra respostas gigantes). */
+export function limiteDaQuery(valor: unknown): number {
+  const n = Number(valor);
+  return Number.isInteger(n) && n > 0 ? Math.min(n, 100) : POR_PAGINA;
+}
+
 /** `page` da query → inteiro 1..10.000 (design §7). */
 export function paginaDaQuery(valor: unknown): number {
   const n = Number(valor ?? 1);
@@ -19,19 +25,14 @@ export function paginaDaQuery(valor: unknown): number {
 }
 
 /**
- * Link de página como o paginador do Laravel: mantém os demais parâmetros da query NA ORDEM em que vieram e troca
- * o `page` no lugar dele (ou acrescenta no fim, se não veio). Ex.: `?orderBy=id&sortedBy=desc&page=2`.
+ * Link de página como o paginador do Laravel/l5-repository: mantém os demais parâmetros da query na ordem em que
+ * vieram, TIRA o `page` da posição original e o acrescenta no FIM. Ex.: `?page=1&orderBy=balance&limit=5` →
+ * `?orderBy=balance&limit=5&page=2` (capturado do oráculo pelo tráfego real do SPA).
  */
 export function urlDaPagina(urlBase: string, query: Record<string, unknown>, pagina: number): string {
   const params = new URLSearchParams();
-  let temPage = false;
-  for (const [k, v] of Object.entries(query)) {
-    if (k === 'page') {
-      params.append('page', String(pagina));
-      temPage = true;
-    } else if (typeof v === 'string') params.append(k, v);
-  }
-  if (!temPage) params.append('page', String(pagina));
+  for (const [k, v] of Object.entries(query)) if (k !== 'page' && typeof v === 'string') params.append(k, v);
+  params.append('page', String(pagina));
   return `${urlBase}?${params.toString()}`;
 }
 

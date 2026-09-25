@@ -1,5 +1,5 @@
 // T08 — paginação no formato do Fractal/Laravel (achado pelo espelho de leitura: links preservam a query).
-import { metaPaginacao, paginaDaQuery, urlDaPagina } from '../src/shared/http/paginacao';
+import { limiteDaQuery, metaPaginacao, paginaDaQuery, urlDaPagina } from '../src/shared/http/paginacao';
 
 describe('paginação compatível (T08)', () => {
   it('link mantém os parâmetros na ordem e acrescenta page no fim', () => {
@@ -8,8 +8,17 @@ describe('paginação compatível (T08)', () => {
     );
   });
 
-  it('page que já veio na query é trocado no mesmo lugar', () => {
-    expect(urlDaPagina('http://h/x', { page: '2', orderBy: 'id' }, 3)).toBe('http://h/x?page=3&orderBy=id');
+  it('page que já veio na query vai para o FIM (como o oráculo faz — capturado do tráfego real do SPA)', () => {
+    expect(urlDaPagina('http://h/x', { page: '1', orderBy: 'balance', limit: '5' }, 2)).toBe(
+      'http://h/x?orderBy=balance&limit=5&page=2',
+    );
+  });
+
+  it('limit: >0 vira per_page (teto 100); inválido → 15', () => {
+    expect(limiteDaQuery('5')).toBe(5);
+    expect(limiteDaQuery('0')).toBe(15);
+    expect(limiteDaQuery('999')).toBe(100);
+    expect(limiteDaQuery(undefined)).toBe(15);
   });
 
   it('sem próxima nem anterior, links é array vazio (como o Fractal serializa)', () => {

@@ -574,6 +574,28 @@ plano com `node tools/aprovar-tasks.mjs contas "Francisco"`. Depois, Fase A (T01
   de testes cair de 74 para 71. Conferir a contagem de testes, não só "passou", virou hábito.
 - **Fase A concluída (T01–T08).**
 
+## Etapa 12 — As duas versões no ar (local) · 25/09/2026
+
+**Objetivo:** pedido do Francisco — "deixar no ar as duas versões". Decisão dele: **local e utilizável** (sem expor na internet).
+
+- **A tela do legado estava quebrada** (`/app` pedia `build/spa.bundle.js`, que nunca foi versionado). `docker/spa/Dockerfile`
+  compila o SPA de `legacy/` (Vue 1 + webpack 1.15) com a URL da API fixada no build, como a task `spa-config` do gulp fazia.
+  Node **8** em vez do 6.8.1: sem lockfile, dependências transitivas de hoje pedem um pouco mais. Compilou de primeira.
+- A **mesma tela** servida duas vezes por nginx: **:8082 → API antiga**, **:8083 → API nova**, com um selo de versão.
+  É o Strangler Fig visível: o front não sabe qual backend atende. CORS da API nova liberado para :8083.
+- **Testado num navegador de verdade (Playwright):** login e telas nas duas versões.
+- **O achado mais importante desta etapa:** a tela nova listava 9 contas em ordem de id, sem banco. O SPA real chama
+  `/api/bank_accounts?page=1&orderBy=balance&sortedBy=desc&search=&include=bank&limit=5` — parâmetros que o **contrato escrito
+  à mão não tinha** e que o espelho não testava. Capturei o **tráfego real** de todas as telas (`.specs/legado/trafego-spa.md`)
+  e o espelho passou a usar essas URLs.
+  - `limit` vira `per_page`; `include=bank`/`bankAccount` aninham objetos; busca em contas bancárias é LIKE em 4 campos.
+  - A busca por período no extrato **não tem efeito** no legado (o repositório não declara campos pesquisáveis).
+  - O link de paginação do Laravel **move o `page` para o fim** da query — meu teste unitário da T08 afirmava o contrário e
+    estava errado. Quem manda é o oráculo.
+- Resultado: espelho **15/15 idêntico**; na tela nova, contas bancárias, plano de contas e extrato funcionam como na antiga.
+- Fora do `contas`: `/api/cash_flows*` e `/api/banks` ainda não existem no novo; logos de banco não carregam em nenhum dos
+  dois (falta `storage:link` no container do legado).
+
 ---
 
 ## Lições até aqui
@@ -590,3 +612,5 @@ plano com `node tools/aprovar-tasks.mjs contas "Francisco"`. Depois, Fase A (T01
 8. **Compare valores, não só formatos.** Com os dois bancos iguais depois do ETL, o espelho de leitura pega diferenças
    que um teste de contrato (só formato) deixaria passar.
 9. **Teste que limpa dados precisa de trava.** Um `where` com `undefined` vira "sem filtro".
+10. **O contrato é o tráfego real, não o que se escreveu sobre ele.** O front usava parâmetros que nenhum documento
+    mencionava; só apareceram ao pôr a tela de verdade na frente da API nova.

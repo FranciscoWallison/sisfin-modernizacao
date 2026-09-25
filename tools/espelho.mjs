@@ -36,17 +36,21 @@ const USUARIOS = {
 // Id de uma conta bancária do cliente 1 (para o teste entre clientes)
 const contaDoC1 = (await legado.requisitar(USUARIOS.c1, 'GET', '/api/bank_accounts')).corpo.data[0].id;
 
+// URLs do TRÁFEGO REAL do SPA (.specs/legado/trafego-spa.md) + variações e o teste entre clientes
 const ROTAS = [
   ['c1', '/api/user'],
+  ['c1', '/api/bank_accounts?page=1&orderBy=balance&sortedBy=desc&search=&include=bank&limit=5'], // dashboard
+  ['c1', '/api/bank_accounts?page=2&orderBy=balance&sortedBy=desc&search=&include=bank&limit=5'],
+  ['c1', '/api/bank_accounts?search=North'],
   ['c1', '/api/bank_accounts'],
-  ['c1', '/api/bank_accounts/lists'],
+  ['c1', '/api/bank_accounts/lists'], // contas a pagar
   ['c1', `/api/bank_accounts/${contaDoC1}`],
-  ['c1', '/api/category_expenses'],
+  ['c1', '/api/category_expenses'], // plano de contas
   ['c1', '/api/category_revenues'],
-  ['c1', '/api/statements'],
+  ['c1', '/api/statements?page=1&orderBy=id&sortedBy=asc&search=01%2F09%2F2026+-+30%2F09%2F2026&include=bankAccount'], // extrato
   ['c1', '/api/statements?orderBy=id&sortedBy=desc'],
   ['c1', '/api/statements?page=2'],
-  ['c3', '/api/bank_accounts'],
+  ['c3', '/api/bank_accounts?page=1&orderBy=balance&sortedBy=desc&search=&include=bank&limit=5'],
   ['c3', '/api/statements'],
   ['c3', `/api/bank_accounts/${contaDoC1}`], // conta de OUTRO cliente → 404 nos dois
 ];

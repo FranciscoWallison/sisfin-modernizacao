@@ -23,7 +23,9 @@ não depende de alguém escrever os testes certos: ele compara com a realidade (
 | Oráculo reproduzível | infraestrutura | comportamento | `docker-compose.yml` + `DeterministicSeeder` | ✅ |
 | Golden master | sensor computacional | comportamento | `tools/paridade.mjs` + `.specs/paridade/` | ✅ 8 casos |
 | Observabilidade do oráculo | sensor computacional | comportamento | `tools/oraculo-sql.mjs` | ✅ |
-| **Espelho de leitura** | sensor computacional | comportamento | `tools/espelho.mjs` — logo após o ETL, cada GET tem de responder **igual** (valores) no legado e no novo | ✅ 12/12 rotas (T08) |
+| **Espelho de leitura** | sensor computacional | comportamento | `tools/espelho.mjs` — logo após o ETL, cada GET tem de responder **igual** (valores) no legado e no novo, usando as URLs do **tráfego real** do SPA | ✅ 15/15 rotas (T08) |
+| **Tráfego real do front** | guia/oráculo | comportamento | `.specs/legado/trafego-spa.md` — chamadas capturadas com Playwright em cada tela do SPA antigo | ✅ 9 telas |
+| **As duas versões lado a lado** | verificação humana | comportamento | mesma tela em :8082 (API antiga) e :8083 (API nova) | ✅ |
 | Rastreabilidade | sensor computacional | comportamento | `tools/rastreabilidade.mjs` | ✅ |
 | Validação de specs ao editar | sensor computacional | manutenibilidade | hook `depois-de-editar` | ✅ |
 | Typecheck ao editar | sensor computacional | manutenibilidade | hook `depois-de-editar` | ✅ ~4 s por edição em `api/` |

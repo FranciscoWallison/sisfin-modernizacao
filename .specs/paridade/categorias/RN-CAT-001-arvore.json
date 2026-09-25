@@ -1,0 +1,180 @@
+{
+  "rn": [
+    "RN-CAT-001",
+    "RN-CAT-002",
+    "RN-CAT-005",
+    "RN-CAT-007",
+    "RN-CAT-008"
+  ],
+  "descricao": "Árvore de categorias do próprio cliente: criar raiz e filha (depth), editar mantendo o pai, editar SEM parent_id (vira raiz — contrato da tela), excluir raiz leva as descendentes, validações.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "criar_raiz",
+      "metodo": "POST",
+      "rota": "/api/category_expenses",
+      "corpo": {
+        "name": "PAR-CAT1-RAIZ-{{execucao}}"
+      },
+      "caminho": "data",
+      "campos": [
+        "parent_id",
+        "depth"
+      ],
+      "salvar": {
+        "raiz": "data.id"
+      }
+    },
+    {
+      "nome": "criar_filha",
+      "metodo": "POST",
+      "rota": "/api/category_expenses",
+      "corpo": {
+        "name": "PAR-CAT1-FILHA-{{execucao}}",
+        "parent_id": "{{raiz}}"
+      },
+      "caminho": "data",
+      "campos": [
+        "depth"
+      ],
+      "salvar": {
+        "filha": "data.id",
+        "pai_da_filha": "data.parent_id"
+      }
+    },
+    {
+      "nome": "renomear_filha_com_pai",
+      "metodo": "PUT",
+      "rota": "/api/category_expenses/{{filha}}",
+      "corpo": {
+        "name": "PAR-CAT1-FILHA2-{{execucao}}",
+        "parent_id": "{{raiz}}"
+      },
+      "caminho": "data",
+      "campos": [
+        "depth"
+      ],
+      "salvar": {
+        "pai_apos_renomear": "data.parent_id"
+      }
+    },
+    {
+      "nome": "renomear_filha_sem_pai",
+      "metodo": "PUT",
+      "rota": "/api/category_expenses/{{filha}}",
+      "corpo": {
+        "name": "PAR-CAT1-FILHA3-{{execucao}}"
+      },
+      "caminho": "data",
+      "campos": [
+        "parent_id",
+        "depth"
+      ]
+    },
+    {
+      "nome": "voltar_para_a_raiz",
+      "metodo": "PUT",
+      "rota": "/api/category_expenses/{{filha}}",
+      "corpo": {
+        "name": "PAR-CAT1-FILHA4-{{execucao}}",
+        "parent_id": "{{raiz}}"
+      }
+    },
+    {
+      "nome": "excluir_raiz",
+      "metodo": "DELETE",
+      "rota": "/api/category_expenses/{{raiz}}"
+    },
+    {
+      "nome": "filha_depois_de_excluir_a_raiz",
+      "rota": "/api/category_expenses/{{filha}}"
+    },
+    {
+      "nome": "sem_nome",
+      "metodo": "POST",
+      "rota": "/api/category_expenses",
+      "corpo": {},
+      "caminho": ""
+    },
+    {
+      "nome": "raiz_de_despesa",
+      "metodo": "POST",
+      "rota": "/api/category_expenses",
+      "corpo": {
+        "name": "PAR-CAT1-D-{{execucao}}"
+      },
+      "salvar": {
+        "despesa": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "receita_com_pai_de_despesa",
+      "metodo": "POST",
+      "rota": "/api/category_revenues",
+      "corpo": {
+        "name": "X",
+        "parent_id": "{{despesa}}"
+      },
+      "caminho": ""
+    }
+  ],
+  "derivar": {
+    "filha_aponta_para_a_raiz": "pai_da_filha === raiz",
+    "pai_mantido_ao_renomear_com_pai": "pai_apos_renomear === raiz"
+  },
+  "esperado": {
+    "criar_raiz": {
+      "status": 201,
+      "corpo": {
+        "parent_id": null,
+        "depth": 0
+      }
+    },
+    "criar_filha": {
+      "status": 201,
+      "corpo": {
+        "depth": 1
+      }
+    },
+    "renomear_filha_com_pai": {
+      "status": 200,
+      "corpo": {
+        "depth": 1
+      }
+    },
+    "renomear_filha_sem_pai": {
+      "status": 200,
+      "corpo": {
+        "parent_id": null,
+        "depth": 0
+      }
+    },
+    "voltar_para_a_raiz": {
+      "status": 200
+    },
+    "excluir_raiz": {
+      "status": 204
+    },
+    "filha_depois_de_excluir_a_raiz": {
+      "status": 404
+    },
+    "sem_nome": {
+      "status": 422
+    },
+    "receita_com_pai_de_despesa": {
+      "status": 422
+    },
+    "filha_aponta_para_a_raiz": true,
+    "pai_mantido_ao_renomear_com_pai": true
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  }
+}

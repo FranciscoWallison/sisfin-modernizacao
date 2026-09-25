@@ -29,7 +29,7 @@
 
 | Módulo | Achado | Evidência |
 |---|---|---|
-| categorias | A criação de categoria **desliga o filtro de tenant** durante a operação (`$model::$enableTenant = false`) para montar o nested set; investigar se filho pode ser criado sob pai de outro cliente | `legacy/app/Repositories/Traits/CategoryRepositoryTrait.php` (`create`) |
+| categorias | ~~A criação de categoria desliga o filtro de tenant; investigar~~ → **investigado (25/09):** a criação é protegida pela validação do `parent_id`; a **edição** não é — IDOR confirmado (RN-CAT-003) | `.specs/legado/modulos/categorias/regras.md` |
 
 ## Eventos → listeners (`legacy/app/Providers/EventServiceProvider.php:25-41`)
 

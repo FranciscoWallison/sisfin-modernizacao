@@ -1,0 +1,122 @@
+{
+  "rn": [
+    "RN-CBA-007",
+    "RN-CBA-008",
+    "RN-CAT-001"
+  ],
+  "descricao": "GET /api/banks (lista global, logo com URL absoluta), PUT de conta bancária exige TODOS os campos (UpdateRequest herda as regras do Create) e formato do GET de UMA categoria (show, com children).",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    },
+    "outro_cliente": {
+      "email": "cliente3@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "bancos",
+      "rota": "/api/banks",
+      "caminho": "data.0",
+      "campos": [
+        "id",
+        "name"
+      ],
+      "salvar": {
+        "b": "data",
+        "logo": "data.0.logo"
+      }
+    },
+    {
+      "nome": "bancos_outro_cliente",
+      "usuario": "outro_cliente",
+      "rota": "/api/banks",
+      "salvar": {
+        "b2": "data"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "nova",
+      "metodo": "POST",
+      "rota": "/api/bank_accounts",
+      "corpo": {
+        "name": "PAR-CBA7-{{execucao}}",
+        "agency": "1",
+        "account": "1",
+        "bank_id": 1
+      },
+      "salvar": {
+        "c": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "put_so_com_nome",
+      "metodo": "PUT",
+      "rota": "/api/bank_accounts/{{c}}",
+      "corpo": {
+        "name": "PAR-CBA7b-{{execucao}}"
+      },
+      "caminho": ""
+    },
+    {
+      "nome": "categoria_show",
+      "metodo": "POST",
+      "rota": "/api/category_revenues",
+      "corpo": {
+        "name": "PAR-CBA7-{{execucao}}"
+      },
+      "salvar": {
+        "cat": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "categoria_show_formato",
+      "rota": "/api/category_revenues/{{cat}}",
+      "caminho": "data",
+      "campos": [
+        "parent_id",
+        "depth",
+        "children"
+      ]
+    }
+  ],
+  "derivar": {
+    "bancos_iguais_para_todos_os_clientes": "JSON.stringify(b.map(x => x.id)) === JSON.stringify(b2.map(x => x.id))",
+    "logo_em_storage": "/\\/storage\\/banks\\/imagens\\/[^/]+$/.test(logo)",
+    "bancos_em_ordem_de_id": "b.every((x, i) => i === 0 || b[i - 1].id < x.id)"
+  },
+  "esperado": {
+    "bancos": {
+      "status": 200,
+      "corpo": {
+        "id": 1,
+        "name": "Novo Banco"
+      }
+    },
+    "put_so_com_nome": {
+      "status": 422
+    },
+    "categoria_show_formato": {
+      "status": 200,
+      "corpo": {
+        "parent_id": null,
+        "depth": 0,
+        "children": {
+          "data": []
+        }
+      }
+    },
+    "bancos_iguais_para_todos_os_clientes": true,
+    "logo_em_storage": true,
+    "bancos_em_ordem_de_id": true
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  }
+}

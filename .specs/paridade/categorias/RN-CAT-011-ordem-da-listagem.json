@@ -1,0 +1,133 @@
+{
+  "rn": [
+    "RN-CAT-011"
+  ],
+  "descricao": "Ordem da árvore na listagem: raízes e filhas em ordem de ID (não de _lft). Mover uma categoria (virar raiz, trocar de pai e voltar) não muda sua posição.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "r",
+      "metodo": "POST",
+      "rota": "/api/category_revenues",
+      "corpo": {
+        "name": "PAR-ORD-R-{{execucao}}"
+      },
+      "salvar": {
+        "r": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "a",
+      "metodo": "POST",
+      "rota": "/api/category_revenues",
+      "corpo": {
+        "name": "PAR-ORD-A-{{execucao}}",
+        "parent_id": "{{r}}"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "b",
+      "metodo": "POST",
+      "rota": "/api/category_revenues",
+      "corpo": {
+        "name": "PAR-ORD-B-{{execucao}}",
+        "parent_id": "{{r}}"
+      },
+      "salvar": {
+        "b": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "c",
+      "metodo": "POST",
+      "rota": "/api/category_revenues",
+      "corpo": {
+        "name": "PAR-ORD-C-{{execucao}}",
+        "parent_id": "{{r}}"
+      },
+      "salvar": {
+        "c": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "r2",
+      "metodo": "POST",
+      "rota": "/api/category_revenues",
+      "corpo": {
+        "name": "PAR-ORD-R2-{{execucao}}"
+      },
+      "salvar": {
+        "r2": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "b_vai_para_r2",
+      "metodo": "PUT",
+      "rota": "/api/category_revenues/{{b}}",
+      "corpo": {
+        "name": "PAR-ORD-B-{{execucao}}",
+        "parent_id": "{{r2}}"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "b_volta_para_r",
+      "metodo": "PUT",
+      "rota": "/api/category_revenues/{{b}}",
+      "corpo": {
+        "name": "PAR-ORD-B-{{execucao}}",
+        "parent_id": "{{r}}"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "c_vira_raiz",
+      "metodo": "PUT",
+      "rota": "/api/category_revenues/{{c}}",
+      "corpo": {
+        "name": "PAR-ORD-C-{{execucao}}"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "arvore",
+      "rota": "/api/category_revenues",
+      "salvar": {
+        "arvore": "data"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "r_depois",
+      "rota": "/api/category_revenues/{{r}}",
+      "salvar": {
+        "filhas": "data.children.data"
+      },
+      "registrar": false
+    }
+  ],
+  "derivar": {
+    "raizes_do_caso_em_ordem": "arvore.map(x => x.name).filter(n => n.startsWith('PAR-ORD-') && n.endsWith(String(execucao))).map(n => n.split('-')[2]).join(',')",
+    "filhas_de_r_em_ordem": "filhas.map(x => x.name.split('-')[2]).join(',')",
+    "raizes_em_ordem_de_id": "arvore.every((x, i) => i === 0 || arvore[i - 1].id < x.id)"
+  },
+  "esperado": {
+    "raizes_do_caso_em_ordem": "R,C,R2",
+    "filhas_de_r_em_ordem": "A,B",
+    "raizes_em_ordem_de_id": true
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  }
+}

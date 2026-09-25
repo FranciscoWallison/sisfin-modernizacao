@@ -1,0 +1,135 @@
+{
+  "rn": [
+    "RN-CAT-004",
+    "RN-CAT-005"
+  ],
+  "descricao": "Mover uma categoria para dentro de si mesma ou de uma descendente (ciclo) e excluir categoria que tem contas: no legado, 500.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "raiz",
+      "metodo": "POST",
+      "rota": "/api/category_expenses",
+      "corpo": {
+        "name": "PAR-CAT4-R-{{execucao}}"
+      },
+      "salvar": {
+        "r": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "filha",
+      "metodo": "POST",
+      "rota": "/api/category_expenses",
+      "corpo": {
+        "name": "PAR-CAT4-F-{{execucao}}",
+        "parent_id": "{{r}}"
+      },
+      "salvar": {
+        "f": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "neta",
+      "metodo": "POST",
+      "rota": "/api/category_expenses",
+      "corpo": {
+        "name": "PAR-CAT4-N-{{execucao}}",
+        "parent_id": "{{f}}"
+      },
+      "salvar": {
+        "n": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "raiz_dentro_da_neta",
+      "metodo": "PUT",
+      "rota": "/api/category_expenses/{{r}}",
+      "corpo": {
+        "name": "PAR-CAT4-R-{{execucao}}",
+        "parent_id": "{{n}}"
+      }
+    },
+    {
+      "nome": "pai_de_si_mesma",
+      "metodo": "PUT",
+      "rota": "/api/category_expenses/{{f}}",
+      "corpo": {
+        "name": "PAR-CAT4-F-{{execucao}}",
+        "parent_id": "{{f}}"
+      }
+    },
+    {
+      "nome": "conta_bancaria",
+      "rota": "/api/bank_accounts",
+      "salvar": {
+        "conta": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "conta_na_neta",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-CAT4-{{execucao}}",
+        "date_due": "2018-09-01",
+        "value": 1,
+        "done": false,
+        "category_id": "{{n}}",
+        "bank_account_id": "{{conta}}"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "excluir_neta_com_conta",
+      "metodo": "DELETE",
+      "rota": "/api/category_expenses/{{n}}"
+    },
+    {
+      "nome": "neta_continua_existindo",
+      "rota": "/api/category_expenses/{{n}}"
+    }
+  ],
+  "esperado": {
+    "raiz_dentro_da_neta": {
+      "status": 500
+    },
+    "pai_de_si_mesma": {
+      "status": 500
+    },
+    "excluir_neta_com_conta": {
+      "status": 500
+    },
+    "neta_continua_existindo": {
+      "status": 200
+    }
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  },
+  "divergencias": {
+    "adr": "ADR-007",
+    "motivo": "REQ-CAT-04 e REQ-CAT-05: ciclo e exclusão de categoria com contas → 422 (o legado dá 500).",
+    "esperado": {
+      "raiz_dentro_da_neta": {
+        "status": 422
+      },
+      "pai_de_si_mesma": {
+        "status": 422
+      },
+      "excluir_neta_com_conta": {
+        "status": 422
+      }
+    }
+  }
+}

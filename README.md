@@ -89,7 +89,9 @@ Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios 
 | contas | ✅ 19 regras, 9 dúvidas (todas respondidas), contrato | ✅ 8 casos + 4 regras n/a cobertas por tasks | ✅ requirements, design e tasks aprovados (hash `d854ed6545ef`) | ✅ **migrado** — paridade 9/9, espelho 15/15, 157 testes; revisado por segurança — ver [progresso](.specs/novo/contas/progresso.md) |
 | auth | 🟡 3 regras (controles de segurança) | ✅ 1 caso | 🟡 no REQ-CON-13 / ADR-005 | ⚪ |
 | fluxo-de-caixa | ✅ 8 regras, 5 dúvidas, contrato | ✅ 3 casos | ✅ aprovado (ADR-006) | ✅ **migrado** — paridade 3/3; tela e gráfico funcionando; DUV-FLX-005 pendente |
-| categorias · contas-bancarias · bancos · assinaturas | ⚪ | ⚪ | ⚪ | ⚪ |
+| categorias (escrita) | ✅ 11 regras, 6 dúvidas, contrato | ✅ 6 casos | 🟡 rascunho — aguardando aprovação (ADR-007) | ⚪ (leitura já no compat) |
+| contas-bancarias (escrita + bancos) | ✅ 9 regras, 5 dúvidas, contrato | ✅ 4 casos | 🟡 rascunho — aguardando aprovação (ADR-007) | ⚪ (leitura já no compat) |
+| assinaturas | ⚪ | ⚪ | ⚪ | ⚪ |
 
 O passo a passo completo, com descobertas e lições, está no [diário de bordo](docs/diario-de-bordo.md).
 
@@ -106,3 +108,7 @@ O passo a passo completo, com descobertas e lições, está no [diário de bordo
 - **RN-CON-016** — sem busca, a lista de contas vem vazia: `""` vira `value = 0` — e isso depende da versão do ICU.
 - **RN-CON-018** — os totais ignoram a busca por texto e erram a precedência `or … and done`.
 - **RN-CON-019** — usuário sem cliente loga, mas a API inteira responde 500 (falha fechada, sem vazamento).
+- **RN-CAT-003** — 🔴 outro cliente edita e move categorias alheias: a API responde 404, mas grava — e os valores da vítima aparecem no fluxo de caixa do atacante.
+- **RN-CAT-009** — excluir uma raiz cuja filha tem contas dá 500, mas a raiz já foi apagada: as filhas ficam órfãs e somem da tela.
+- **RN-CAT-011** — a árvore sai em ordem de id por acaso do plano do MySQL (sem `ORDER BY`); o espelho pegou o sistema novo ordenando por `_lft`.
+- **RN-CBA-009** — a tela de edição de conta bancária reenvia o objeto inteiro do GET (inclusive `balance`); uma whitelist estrita quebraria a tela.

@@ -1,0 +1,114 @@
+{
+  "rn": [
+    "RN-CAT-010"
+  ],
+  "descricao": "Corpo que o SPA realmente envia (mixins/category-mixin.js + store/category.js): criar manda { id: 0, name, parent_id } e editar manda { id, name, parent_id } — o `id` no corpo é ignorado pelo legado.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "criar_raiz_como_a_tela",
+      "metodo": "POST",
+      "rota": "/api/category_revenues",
+      "corpo": {
+        "id": 0,
+        "name": "PAR-CAT10-R-{{execucao}}"
+      },
+      "caminho": "data",
+      "campos": [
+        "parent_id",
+        "depth"
+      ],
+      "salvar": {
+        "r": "data.id"
+      }
+    },
+    {
+      "nome": "criar_filha_como_a_tela",
+      "metodo": "POST",
+      "rota": "/api/category_revenues",
+      "corpo": {
+        "id": 0,
+        "name": "PAR-CAT10-F-{{execucao}}",
+        "parent_id": "{{r}}"
+      },
+      "caminho": "data",
+      "campos": [
+        "depth"
+      ],
+      "salvar": {
+        "f": "data.id"
+      }
+    },
+    {
+      "nome": "editar_como_a_tela",
+      "metodo": "PUT",
+      "rota": "/api/category_revenues/{{f}}",
+      "corpo": {
+        "id": "{{f}}",
+        "name": "PAR-CAT10-F2-{{execucao}}",
+        "parent_id": "{{r}}"
+      },
+      "caminho": "data",
+      "campos": [
+        "depth"
+      ]
+    },
+    {
+      "nome": "id_do_corpo_com_outro_valor",
+      "metodo": "PUT",
+      "rota": "/api/category_revenues/{{f}}",
+      "corpo": {
+        "id": 1,
+        "name": "PAR-CAT10-F3-{{execucao}}",
+        "parent_id": "{{r}}"
+      },
+      "caminho": "data",
+      "campos": [
+        "depth"
+      ],
+      "salvar": {
+        "id_resposta": "data.id"
+      }
+    }
+  ],
+  "derivar": {
+    "id_da_rota_prevalece": "id_resposta === f"
+  },
+  "esperado": {
+    "criar_raiz_como_a_tela": {
+      "status": 201,
+      "corpo": {
+        "parent_id": null,
+        "depth": 0
+      }
+    },
+    "criar_filha_como_a_tela": {
+      "status": 201,
+      "corpo": {
+        "depth": 1
+      }
+    },
+    "editar_como_a_tela": {
+      "status": 200,
+      "corpo": {
+        "depth": 1
+      }
+    },
+    "id_do_corpo_com_outro_valor": {
+      "status": 200,
+      "corpo": {
+        "depth": 1
+      }
+    },
+    "id_da_rota_prevalece": true
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  }
+}

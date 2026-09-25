@@ -707,6 +707,58 @@ módulo (fluxo de caixa é o mais visível na tela — é o único gráfico do d
   do revisor não se aplicou (`?start[x]` não vira objeto no Express 5) — o teste afirma o comportamento real.
 - **Ciclo completo** (espelho, paridade nos dois alvos, integração): verde.
 
+## Etapa 18 — Módulos `categorias` e `contas-bancarias` (escrita): levantamento e proposta · 25/09/2026
+
+**Objetivo:** a escrita de categorias e de contas bancárias, junto com `GET /api/banks`. São as telas que ainda não
+salvam na versão nova (plano de contas, criar/editar conta bancária).
+
+- **Arqueologia** em `CategoryRepositoryTrait`, `AbstractCategory`, `CategoryRequest`, `BankAccountCreateRequest`,
+  `BankAccountSetDefaultListener`, no `NodeTrait` do nestedset (dentro do container) e nos componentes Vue. Sondas no
+  oráculo com dois clientes.
+- **🔴 Vulnerabilidade (RN-CAT-003):** o cliente B faz `PUT` numa categoria do cliente A e recebe **404**, mas a escrita
+  **acontece**:
+  - com `parent_id` de B, a categoria é movida para a árvore de B;
+  - o `update` desliga o tenant, e o 404 vem do `find` que o controller faz depois, já com o tenant religado;
+  - cadeia completa provada: A lança uma conta de 4242 na categoria movida e ela aparece no **fluxo de caixa de B**.
+  - Era a suspeita anotada no inventário desde a Etapa 1 ("desliga o tenant... investigar"). Estava na **edição**, não
+    na criação: a criação é protegida pela validação do `parent_id`.
+- **🔴 Corrupção (RN-CAT-009):** excluir uma raiz cuja filha tem contas responde 500, mas a raiz **já foi apagada**:
+  - o nestedset apaga o nó e só depois as descendentes, sem transação;
+  - as filhas ficam órfãs, somem da tela e as contas ficam ligadas a categorias invisíveis;
+  - confirmado direto no MySQL.
+- **Contrato real da tela:**
+  - A edição de conta bancária reenvia **o objeto inteiro do GET** (`id`, `balance`, datas, `bank`). Com a whitelist
+    global do sistema novo, a tela quebraria com 422, e rejeitar `balance` (ideia inicial) também quebraria.
+  - A tela de categorias manda `id` no corpo.
+  - Nos dois casos o novo vai aceitar e ignorar **exatamente** esses campos, cada um com seu caso de paridade.
+- **Bug no que já estava migrado (RN-CAT-011):**
+  - O legado lista a árvore em **ordem de id**, sem `ORDER BY`: o `EXPLAIN` mostra o índice `client_id`, e o InnoDB
+    devolve na ordem da PK.
+  - O compat ordena por `_lft`. Com as árvores do seed as duas ordens coincidem; depois das sondas (categorias
+    movidas), **o espelho acusou** `/api/category_revenues`.
+  - Fica como G01 no plano. O conserto espera a aprovação, porque mexe em código já aprovado.
+- **O ETL ganhou três checagens** que bloqueiam o cutover:
+  - árvores de categoria entre clientes (por `parent_id` e por `_lft/_rgt`);
+  - categorias órfãs;
+  - cliente com mais de uma conta padrão.
+  - As duas primeiras já acusam os estragos que as próprias sondas fizeram no oráculo local.
+- **Paridade:** 10 casos novos (6 de categorias, 4 de contas bancárias; o `RN-CBA-007` também cobre o `GET` de uma categoria), todos verdes no
+  legado. Rodado com `--alvo novo` contra o próprio legado, o executor falha **exatamente** nos 4 casos corrigidos pelo
+  ADR-007 (sensor de que as divergências estão bem escritas).
+- **Decisão de desenho que o dado mudou:** o nested set do legado é numerado **globalmente**, com faixas de clientes
+  intercaladas. Manter isso faria toda escrita deslocar linhas de outros clientes. Proposta: renumerar **só o
+  cliente**, a partir de `parent_id`, depois de cada escrita. É seguro porque o único uso de `_lft/_rgt` (fluxo de
+  caixa) já compara `client_id` (conferido no código).
+- TO-BE em rascunho:
+  - requirements REQ-CAT-01..08 e REQ-CBA-01..08;
+  - **ADR-007 (proposto)**: IDOR, ciclo, exclusão tudo ou nada, 4×500→422, troca da padrão atômica, `ASSETS_URL`;
+  - designs;
+  - tasks G01–G07 e B01–B07.
+- Rastreabilidade `--strict` verde; paridade 22/22 no legado.
+
+**Próximo passo:** Francisco decide as DUV-CAT-001..003 e DUV-CBA-001, 003 e 005 (ADR-007) e aprova os dois planos:
+`node tools/aprovar-tasks.mjs categorias "Francisco"` e `node tools/aprovar-tasks.mjs contas-bancarias "Francisco"`.
+
 ---
 
 ## Lições até aqui
@@ -731,3 +783,7 @@ módulo (fluxo de caixa é o mais visível na tela — é o único gráfico do d
 16. **Compare logo depois do ETL.** Qualquer execução entre os dois (inclusive a paridade) muda um dos lados.
 14. **Oráculo com bug de janela ainda serve de oráculo:** crie os dados onde ele olha (2018) e compare o novo lá.
 13. **Hipótese de revisor vira teste que falha antes da correção.** Três de três se confirmaram — e o teste fica como sensor.
+17. **"Responde 404" não é "não fez nada".** Teste de isolamento de escrita tem de conferir o **efeito** (ler como a
+    vítima depois do ataque), não só o status do atacante.
+18. **O corpo que a tela envia faz parte do contrato.** Uma whitelist correta em teoria quebraria a edição de conta
+    bancária; só a leitura do componente Vue mostrou o objeto inteiro indo no `PUT`.

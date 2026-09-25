@@ -1,0 +1,134 @@
+{
+  "rn": [
+    "RN-CAT-009"
+  ],
+  "descricao": "Excluir uma raiz cuja FILHA tem contas: o legado responde 500, mas a raiz JÁ foi apagada — as filhas ficam órfãs (acessíveis por id, invisíveis na árvore) e a conta continua ligada a uma categoria invisível.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "raiz",
+      "metodo": "POST",
+      "rota": "/api/category_expenses",
+      "corpo": {
+        "name": "PAR-CAT9-R-{{execucao}}"
+      },
+      "salvar": {
+        "r": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "filha_sem_conta",
+      "metodo": "POST",
+      "rota": "/api/category_expenses",
+      "corpo": {
+        "name": "PAR-CAT9-F1-{{execucao}}",
+        "parent_id": "{{r}}"
+      },
+      "salvar": {
+        "f1": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "filha_com_conta",
+      "metodo": "POST",
+      "rota": "/api/category_expenses",
+      "corpo": {
+        "name": "PAR-CAT9-F2-{{execucao}}",
+        "parent_id": "{{r}}"
+      },
+      "salvar": {
+        "f2": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "conta_bancaria",
+      "rota": "/api/bank_accounts",
+      "salvar": {
+        "conta": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "conta_na_filha",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-CAT9-{{execucao}}",
+        "date_due": "2018-09-03",
+        "value": 1,
+        "done": false,
+        "category_id": "{{f2}}",
+        "bank_account_id": "{{conta}}"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "excluir_raiz",
+      "metodo": "DELETE",
+      "rota": "/api/category_expenses/{{r}}"
+    },
+    {
+      "nome": "raiz_depois",
+      "rota": "/api/category_expenses/{{r}}"
+    },
+    {
+      "nome": "filha_sem_conta_depois",
+      "rota": "/api/category_expenses/{{f1}}"
+    },
+    {
+      "nome": "filha_com_conta_depois",
+      "rota": "/api/category_expenses/{{f2}}"
+    },
+    {
+      "nome": "arvore",
+      "rota": "/api/category_expenses",
+      "salvar": {
+        "arvore": "data"
+      },
+      "registrar": false
+    }
+  ],
+  "derivar": {
+    "filhas_visiveis_na_arvore": "JSON.stringify(arvore).includes('PAR-CAT9-F2-')"
+  },
+  "esperado": {
+    "excluir_raiz": {
+      "status": 500
+    },
+    "raiz_depois": {
+      "status": 404
+    },
+    "filha_sem_conta_depois": {
+      "status": 200
+    },
+    "filha_com_conta_depois": {
+      "status": 200
+    },
+    "filhas_visiveis_na_arvore": false
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  },
+  "divergencias": {
+    "adr": "ADR-007",
+    "motivo": "REQ-CAT-05: exclusão tudo-ou-nada — descendente com contas → 422 e nada é apagado (o legado apaga a raiz e deixa órfãs).",
+    "esperado": {
+      "excluir_raiz": {
+        "status": 422
+      },
+      "raiz_depois": {
+        "status": 200
+      },
+      "filhas_visiveis_na_arvore": true
+    }
+  }
+}

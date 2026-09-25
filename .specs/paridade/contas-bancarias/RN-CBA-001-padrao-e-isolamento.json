@@ -1,0 +1,200 @@
+{
+  "rn": [
+    "RN-CBA-001",
+    "RN-CBA-002",
+    "RN-CBA-006"
+  ],
+  "descricao": "Criar/editar conta bancária; no máximo UMA padrão por cliente (marcar uma desmarca a anterior; desmarcar deixa nenhuma); outro cliente não lê, não edita nem exclui.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    },
+    "outro_cliente": {
+      "email": "cliente3@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "padroes_de_b_antes",
+      "usuario": "outro_cliente",
+      "rota": "/api/bank_accounts?limit=100",
+      "salvar": {
+        "b_antes": "data"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "criar_padrao",
+      "metodo": "POST",
+      "rota": "/api/bank_accounts",
+      "corpo": {
+        "name": "PAR-CBA1-{{execucao}}",
+        "agency": "123-4",
+        "account": "567-8",
+        "bank_id": 1,
+        "default": true
+      },
+      "caminho": "data",
+      "campos": [
+        "agency",
+        "account",
+        "balance",
+        "default",
+        "bank_id"
+      ],
+      "salvar": {
+        "c1": "data.id"
+      }
+    },
+    {
+      "nome": "lista_1",
+      "rota": "/api/bank_accounts?limit=100",
+      "salvar": {
+        "l1": "data"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "criar_segunda_padrao",
+      "metodo": "POST",
+      "rota": "/api/bank_accounts",
+      "corpo": {
+        "name": "PAR-CBA1b-{{execucao}}",
+        "agency": "1",
+        "account": "2",
+        "bank_id": 2,
+        "default": true
+      },
+      "salvar": {
+        "c2": "data.id"
+      }
+    },
+    {
+      "nome": "lista_2",
+      "rota": "/api/bank_accounts?limit=100",
+      "salvar": {
+        "l2": "data"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "desmarcar_a_segunda",
+      "metodo": "PUT",
+      "rota": "/api/bank_accounts/{{c2}}",
+      "corpo": {
+        "name": "PAR-CBA1b-{{execucao}}",
+        "agency": "1",
+        "account": "2",
+        "bank_id": 2,
+        "default": false
+      },
+      "caminho": "data",
+      "campos": [
+        "default"
+      ]
+    },
+    {
+      "nome": "lista_3",
+      "rota": "/api/bank_accounts?limit=100",
+      "salvar": {
+        "l3": "data"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "b_le",
+      "usuario": "outro_cliente",
+      "rota": "/api/bank_accounts/{{c1}}"
+    },
+    {
+      "nome": "b_edita",
+      "usuario": "outro_cliente",
+      "metodo": "PUT",
+      "rota": "/api/bank_accounts/{{c1}}",
+      "corpo": {
+        "name": "INVADIDA",
+        "agency": "9",
+        "account": "9",
+        "bank_id": 1,
+        "default": true
+      }
+    },
+    {
+      "nome": "b_exclui",
+      "usuario": "outro_cliente",
+      "metodo": "DELETE",
+      "rota": "/api/bank_accounts/{{c1}}"
+    },
+    {
+      "nome": "a_ve_a_sua",
+      "rota": "/api/bank_accounts/{{c1}}",
+      "caminho": "data",
+      "campos": [
+        "agency",
+        "account"
+      ]
+    },
+    {
+      "nome": "padroes_de_b_depois",
+      "usuario": "outro_cliente",
+      "rota": "/api/bank_accounts?limit=100",
+      "salvar": {
+        "b_depois": "data"
+      },
+      "registrar": false
+    }
+  ],
+  "derivar": {
+    "uma_padrao_apos_criar": "l1.filter(c => c.default).map(c => c.id).join() === String(c1)",
+    "padrao_troca_para_a_segunda": "l2.filter(c => c.default).map(c => c.id).join() === String(c2)",
+    "nenhuma_padrao_apos_desmarcar": "l3.filter(c => c.default).length === 0",
+    "padroes_de_b_intactos": "JSON.stringify(b_antes.filter(c => c.default).map(c => c.id)) === JSON.stringify(b_depois.filter(c => c.default).map(c => c.id))"
+  },
+  "esperado": {
+    "criar_padrao": {
+      "status": 201,
+      "corpo": {
+        "agency": "123-4",
+        "account": "567-8",
+        "balance": 0,
+        "default": true,
+        "bank_id": 1
+      }
+    },
+    "criar_segunda_padrao": {
+      "status": 201
+    },
+    "desmarcar_a_segunda": {
+      "status": 200,
+      "corpo": {
+        "default": false
+      }
+    },
+    "b_le": {
+      "status": 404
+    },
+    "b_edita": {
+      "status": 404
+    },
+    "b_exclui": {
+      "status": 404
+    },
+    "a_ve_a_sua": {
+      "status": 200,
+      "corpo": {
+        "agency": "123-4",
+        "account": "567-8"
+      }
+    },
+    "uma_padrao_apos_criar": true,
+    "padrao_troca_para_a_segunda": true,
+    "nenhuma_padrao_apos_desmarcar": true,
+    "padroes_de_b_intactos": true
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  }
+}

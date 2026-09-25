@@ -1,0 +1,95 @@
+{
+  "rn": [
+    "RN-CBA-009"
+  ],
+  "descricao": "Corpo que o SPA realmente envia: a edição reenvia o OBJETO INTEIRO do GET ?include=bank (id, balance, created_at, updated_at, bank) — o legado aceita e ignora o que não é fillable; a criação envia bank_id '' se o usuário não escolheu banco.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "criar_como_a_tela",
+      "metodo": "POST",
+      "rota": "/api/bank_accounts",
+      "corpo": {
+        "name": "PAR-CBA9-{{execucao}}",
+        "agency": "11",
+        "account": "22",
+        "bank_id": 1,
+        "default": false
+      },
+      "caminho": "data",
+      "campos": [
+        "balance",
+        "default"
+      ],
+      "salvar": {
+        "c": "data.id"
+      }
+    },
+    {
+      "nome": "tela_de_edicao_carrega",
+      "rota": "/api/bank_accounts/{{c}}?include=bank",
+      "salvar": {
+        "obj": "data"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "salvar_objeto_inteiro",
+      "metodo": "PUT",
+      "rota": "/api/bank_accounts/{{c}}",
+      "corpo": "{{obj}}",
+      "caminho": "data",
+      "campos": [
+        "agency",
+        "account",
+        "balance",
+        "default",
+        "bank_id"
+      ]
+    },
+    {
+      "nome": "criar_sem_escolher_banco",
+      "metodo": "POST",
+      "rota": "/api/bank_accounts",
+      "corpo": {
+        "name": "PAR-CBA9b-{{execucao}}",
+        "agency": "1",
+        "account": "1",
+        "bank_id": "",
+        "default": false
+      },
+      "caminho": ""
+    }
+  ],
+  "esperado": {
+    "criar_como_a_tela": {
+      "status": 201,
+      "corpo": {
+        "balance": 0,
+        "default": false
+      }
+    },
+    "salvar_objeto_inteiro": {
+      "status": 200,
+      "corpo": {
+        "agency": "11",
+        "account": "22",
+        "balance": 0,
+        "default": false,
+        "bank_id": 1
+      }
+    },
+    "criar_sem_escolher_banco": {
+      "status": 422
+    }
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  }
+}

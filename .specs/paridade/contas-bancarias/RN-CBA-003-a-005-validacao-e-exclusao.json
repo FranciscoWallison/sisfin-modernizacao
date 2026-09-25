@@ -1,0 +1,162 @@
+{
+  "rn": [
+    "RN-CBA-003",
+    "RN-CBA-004",
+    "RN-CBA-005"
+  ],
+  "descricao": "balance no corpo (ignorado em silêncio no legado), bank_id inexistente (500 no legado), campos obrigatórios, exclusão de conta bancária com lançamentos (500 no legado) e vazia (204).",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "balance_no_corpo",
+      "metodo": "POST",
+      "rota": "/api/bank_accounts",
+      "corpo": {
+        "name": "PAR-CBA3-{{execucao}}",
+        "agency": "1",
+        "account": "1",
+        "bank_id": 1,
+        "balance": 1000000
+      },
+      "caminho": "data",
+      "campos": [
+        "balance"
+      ]
+    },
+    {
+      "nome": "bank_id_inexistente",
+      "metodo": "POST",
+      "rota": "/api/bank_accounts",
+      "corpo": {
+        "name": "PAR-CBA3b-{{execucao}}",
+        "agency": "1",
+        "account": "1",
+        "bank_id": 99999
+      }
+    },
+    {
+      "nome": "sem_campos",
+      "metodo": "POST",
+      "rota": "/api/bank_accounts",
+      "corpo": {},
+      "caminho": ""
+    },
+    {
+      "nome": "nova_para_lancar",
+      "metodo": "POST",
+      "rota": "/api/bank_accounts",
+      "corpo": {
+        "name": "PAR-CBA3c-{{execucao}}",
+        "agency": "2",
+        "account": "2",
+        "bank_id": 1
+      },
+      "salvar": {
+        "comLancamento": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "categoria",
+      "rota": "/api/category_expenses",
+      "salvar": {
+        "cat": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "lancamento",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-CBA3-{{execucao}}",
+        "date_due": "2018-10-01",
+        "value": 1,
+        "done": false,
+        "category_id": "{{cat}}",
+        "bank_account_id": "{{comLancamento}}"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "excluir_com_lancamento",
+      "metodo": "DELETE",
+      "rota": "/api/bank_accounts/{{comLancamento}}"
+    },
+    {
+      "nome": "continua_existindo",
+      "rota": "/api/bank_accounts/{{comLancamento}}"
+    },
+    {
+      "nome": "nova_vazia",
+      "metodo": "POST",
+      "rota": "/api/bank_accounts",
+      "corpo": {
+        "name": "PAR-CBA3d-{{execucao}}",
+        "agency": "3",
+        "account": "3",
+        "bank_id": 1
+      },
+      "salvar": {
+        "vazia": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "excluir_vazia",
+      "metodo": "DELETE",
+      "rota": "/api/bank_accounts/{{vazia}}"
+    },
+    {
+      "nome": "vazia_sumiu",
+      "rota": "/api/bank_accounts/{{vazia}}"
+    }
+  ],
+  "esperado": {
+    "balance_no_corpo": {
+      "status": 201,
+      "corpo": {
+        "balance": 0
+      }
+    },
+    "bank_id_inexistente": {
+      "status": 500
+    },
+    "sem_campos": {
+      "status": 422
+    },
+    "excluir_com_lancamento": {
+      "status": 500
+    },
+    "continua_existindo": {
+      "status": 200
+    },
+    "excluir_vazia": {
+      "status": 204
+    },
+    "vazia_sumiu": {
+      "status": 404
+    }
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  },
+  "divergencias": {
+    "adr": "ADR-007",
+    "motivo": "REQ-CBA-04 e REQ-CBA-05: bank_id inexistente e exclusão de conta com lançamentos → 422 (o legado dá 500).",
+    "esperado": {
+      "bank_id_inexistente": {
+        "status": 422
+      },
+      "excluir_com_lancamento": {
+        "status": 422
+      }
+    }
+  }
+}

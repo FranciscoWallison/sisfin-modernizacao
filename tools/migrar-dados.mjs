@@ -125,7 +125,29 @@ const cruzadas = await q(`
   UNION ALL SELECT 'bill_receives', b.id, 'category' FROM bill_receives b JOIN category_revenues x ON x.id = b.category_id WHERE x.client_id <> b.client_id
   UNION ALL SELECT 'statements', s.id, 'bank_account' FROM statements s JOIN bank_accounts x ON x.id = s.bank_account_id WHERE x.client_id <> s.client_id
   ORDER BY 1, 2`);
-const ok = contagens.every((c) => c.origem === c.destino) && tiposDesconhecidos.length === 0 && cruzadas.length === 0;
+// Árvores de categorias que cruzam clientes (RN-CAT-003: o legado deixa outro cliente mover uma categoria para a sua
+// árvore). O fluxo de caixa agrega pela raiz via _lft/_rgt (RN-FLX-007) — uma subárvore mista vaza valores.
+const arvoresCruzadas = await q(`
+  ${['category_expenses', 'category_revenues'].map((t) => `
+  SELECT '${t}' AS tabela, c.id, 'parent_id' AS via, p.id AS outra FROM ${t} c JOIN ${t} p ON p.id = c.parent_id WHERE p.client_id <> c.client_id
+  UNION ALL
+  SELECT '${t}', c.id, '_lft/_rgt', r.id FROM ${t} r JOIN ${t} c ON c._lft > r._lft AND c._rgt < r._rgt
+  WHERE r.parent_id IS NULL AND c.client_id <> r.client_id`).join('\n  UNION ALL')}
+  ORDER BY 1, 2, 3`);
+// Categorias órfãs (RN-CAT-009: excluir uma raiz cuja filha tem contas dá 500 no legado, mas a raiz já foi apagada —
+// as filhas ficam com parent_id para uma linha inexistente e somem da tela). parent_id não tem FK.
+const categoriasOrfas = await q(`
+  ${['category_expenses', 'category_revenues'].map((t) => `
+  SELECT '${t}' AS tabela, c.id, c.parent_id FROM ${t} c
+  WHERE c.parent_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM ${t} p WHERE p.id = c.parent_id)`).join('\n  UNION ALL')}
+  ORDER BY 1, 2`);
+// Mais de uma conta padrão por cliente (RN-CBA-002: a troca do legado roda fora de transação). O sistema novo terá
+// índice único parcial (client_id) WHERE "default" — a migração quebraria no meio.
+const padroesDuplicadas = await q(`
+  SELECT client_id AS cliente, COUNT(*)::int AS n, string_agg(id::text, ', ' ORDER BY id) AS contas
+  FROM bank_accounts WHERE "default" GROUP BY client_id HAVING COUNT(*) > 1 ORDER BY client_id`);
+const ok = contagens.every((c) => c.origem === c.destino) && tiposDesconhecidos.length === 0 && cruzadas.length === 0
+  && arvoresCruzadas.length === 0 && categoriasOrfas.length === 0 && padroesDuplicadas.length === 0;
 
 // ---- Relatório ----
 const agora = new Date().toISOString();
@@ -167,6 +189,21 @@ ${semCliente.length ? `${semCliente.length}: ids ${semCliente.map((u) => u.id).j
 ${cruzadas.length ? `❌ ${cruzadas.length} registro(s) apontam para conta bancária/categoria de OUTRO cliente — corrigir na origem antes do cutover.` : '_nenhuma_'}
 ${tabelaMd(cruzadas.slice(0, 50), ['tabela', 'id', 'referencia'])}
 
+## Árvores de categorias entre clientes (RN-CAT-003)
+
+${arvoresCruzadas.length ? `❌ ${arvoresCruzadas.length} categoria(s) numa árvore de OUTRO cliente — corrigir na origem antes do cutover (valores vazariam no fluxo de caixa).` : '_nenhuma_'}
+${tabelaMd(arvoresCruzadas.slice(0, 50), ['tabela', 'id', 'via', 'outra'])}
+
+## Categorias órfãs (RN-CAT-009)
+
+${categoriasOrfas.length ? `❌ ${categoriasOrfas.length} categoria(s) com parent_id inexistente — invisíveis na tela do plano de contas; decidir antes do cutover (DUV-CAT-004).` : '_nenhuma_'}
+${tabelaMd(categoriasOrfas.slice(0, 50), ['tabela', 'id', 'parent_id'])}
+
+## Clientes com mais de uma conta padrão (RN-CBA-002)
+
+${padroesDuplicadas.length ? `❌ ${padroesDuplicadas.length} cliente(s) — escolher uma padrão por cliente antes do cutover.` : '_nenhum_'}
+${tabelaMd(padroesDuplicadas, ['cliente', 'n', 'contas'])}
+
 ## Tipos de extrato não reconhecidos
 
 ${tiposDesconhecidos.length ? tiposDesconhecidos.map((t) => `- \`${t.tipo}\``).join('\n') : '_nenhum_'}
@@ -179,7 +216,7 @@ mkdirSync(dirname(destinoRelatorio), { recursive: true });
 writeFileSync(destinoRelatorio, relatorio);
 
 console.table(contagens);
-console.log(`arredondamentos: ${arredondamentos.length} · saldo≠extrato: ${divergenciaSaldo.length} · órfãos: ${orfaos.length} · usuários sem cliente: ${semCliente.length} · referências entre clientes: ${cruzadas.length}`);
+console.log(`arredondamentos: ${arredondamentos.length} · saldo≠extrato: ${divergenciaSaldo.length} · órfãos: ${orfaos.length} · usuários sem cliente: ${semCliente.length} · referências entre clientes: ${cruzadas.length} · árvores entre clientes: ${arvoresCruzadas.length} · categorias órfãs: ${categoriasOrfas.length} · padrão duplicada: ${padroesDuplicadas.length}`);
 console.log(`relatório: ${destinoRelatorio.slice(raiz.length + 1)}`);
 await origem.end();
 await destino.end();

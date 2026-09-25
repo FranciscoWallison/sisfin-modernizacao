@@ -1,0 +1,155 @@
+{
+  "rn": [
+    "RN-CAT-003",
+    "RN-CAT-006"
+  ],
+  "descricao": "Cliente B tenta ler, renomear, mover e excluir categorias do cliente A. No legado a API responde 404 mas a ESCRITA ACONTECE (renomeia e move a categoria de A para a árvore de B).",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    },
+    "outro_cliente": {
+      "email": "cliente3@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "a_cria_raiz",
+      "metodo": "POST",
+      "rota": "/api/category_expenses",
+      "corpo": {
+        "name": "PAR-CAT3-RA-{{execucao}}"
+      },
+      "salvar": {
+        "raiz_a": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "a_cria_filha",
+      "metodo": "POST",
+      "rota": "/api/category_expenses",
+      "corpo": {
+        "name": "PAR-CAT3-FA-{{execucao}}",
+        "parent_id": "{{raiz_a}}"
+      },
+      "salvar": {
+        "filha_a": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "b_cria_raiz",
+      "usuario": "outro_cliente",
+      "metodo": "POST",
+      "rota": "/api/category_expenses",
+      "corpo": {
+        "name": "PAR-CAT3-RB-{{execucao}}"
+      },
+      "salvar": {
+        "raiz_b": "data.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "b_le",
+      "usuario": "outro_cliente",
+      "rota": "/api/category_expenses/{{filha_a}}"
+    },
+    {
+      "nome": "b_cria_filha_sob_a",
+      "usuario": "outro_cliente",
+      "metodo": "POST",
+      "rota": "/api/category_expenses",
+      "corpo": {
+        "name": "X",
+        "parent_id": "{{raiz_a}}"
+      }
+    },
+    {
+      "nome": "b_renomeia",
+      "usuario": "outro_cliente",
+      "metodo": "PUT",
+      "rota": "/api/category_expenses/{{filha_a}}",
+      "corpo": {
+        "name": "INVADIDA-{{execucao}}"
+      }
+    },
+    {
+      "nome": "a_ve_depois_do_rename",
+      "rota": "/api/category_expenses/{{filha_a}}",
+      "salvar": {
+        "nome_visto_por_a": "data.name"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "b_move_para_sua_arvore",
+      "usuario": "outro_cliente",
+      "metodo": "PUT",
+      "rota": "/api/category_expenses/{{filha_a}}",
+      "corpo": {
+        "name": "MOVIDA-{{execucao}}",
+        "parent_id": "{{raiz_b}}"
+      }
+    },
+    {
+      "nome": "a_ve_depois_do_move",
+      "rota": "/api/category_expenses/{{filha_a}}",
+      "salvar": {
+        "pai_visto_por_a": "data.parent_id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "b_exclui",
+      "usuario": "outro_cliente",
+      "metodo": "DELETE",
+      "rota": "/api/category_expenses/{{raiz_a}}"
+    },
+    {
+      "nome": "a_ainda_tem_a_raiz",
+      "rota": "/api/category_expenses/{{raiz_a}}"
+    }
+  ],
+  "derivar": {
+    "nome_intacto_apos_ataque": "!String(nome_visto_por_a).startsWith('INVADIDA') && !String(nome_visto_por_a).startsWith('MOVIDA')",
+    "filha_continua_na_arvore_de_a": "pai_visto_por_a === raiz_a"
+  },
+  "esperado": {
+    "b_le": {
+      "status": 404
+    },
+    "b_cria_filha_sob_a": {
+      "status": 422
+    },
+    "b_renomeia": {
+      "status": 404
+    },
+    "b_move_para_sua_arvore": {
+      "status": 404
+    },
+    "b_exclui": {
+      "status": 404
+    },
+    "a_ainda_tem_a_raiz": {
+      "status": 200
+    },
+    "nome_intacto_apos_ataque": false,
+    "filha_continua_na_arvore_de_a": false
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  },
+  "divergencias": {
+    "adr": "ADR-007",
+    "motivo": "REQ-CAT-03: categoria de outro cliente → 404 e NADA muda (o legado responde 404 mas renomeia e move).",
+    "esperado": {
+      "nome_intacto_apos_ataque": true,
+      "filha_continua_na_arvore_de_a": true
+    }
+  }
+}

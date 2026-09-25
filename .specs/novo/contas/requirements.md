@@ -122,7 +122,7 @@ Origem: RN-CON-018 · Decisão: **corrigir** — ADR-004
 Aceite: `RN-CON-016-a-018-listagem-e-totais.json` → `totais_consistentes_com_a_lista: true` (divergência ADR-004).
 
 ### REQ-CON-13 — Segurança transversal *(adendo — aguardando aprovação)*
-Origem: RN-AUT-001, RN-AUT-002, RN-AUT-003 · Decisão: **manter** os controles do legado + **corrigir** lacunas — ADR-005
+Origem: RN-AUT-001, RN-AUT-002, RN-AUT-003, RN-CON-019 · Decisão: **manter** os controles do legado + **corrigir** lacunas — ADR-005
 Motivo: revisão de segurança `docs/revisoes/2026-09-25-security-contas.md`.
 
 - QUANDO houver 5 tentativas de login erradas para o mesmo e-mail + IP, O SISTEMA DEVE responder **403**
@@ -133,6 +133,7 @@ Motivo: revisão de segurança `docs/revisoes/2026-09-25-security-contas.md`.
 - O SISTEMA NÃO DEVE aceitar `id`, `client_id` ou campos desconhecidos no corpo (422); `repeat_number` ≤ 120; `value` ≤ 999.999.999,99.
 - Erros internos NÃO DEVEM expor tabela, coluna ou SQL; logs NÃO DEVEM conter senha, token ou cabeçalho `Authorization`.
 - Todo movimento de saldo DEVE registrar o usuário e a ação que o originou (auditoria).
+- QUANDO o usuário não tiver cliente, O SISTEMA DEVE recusar o login (400) e responder **403** nas rotas protegidas. *(legado: login 200 e API 500 — RN-CON-019)*
 
 Aceite: `paridade/auth/RN-AUT-001-a-003-sessao.json` (paridade exata) + testes de segurança da T05, T06, T07, T12, T13 e T17.
 

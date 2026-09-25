@@ -45,6 +45,7 @@
 
 ### RN-CON-007 — Atualização do saldo é atômica e com lock; o extrato fica fora da transação
 - **Regra:** `addBalance` abre transação e trava a linha da conta bancária antes de somar; o `Statement` é criado depois do commit.
+- **Paridade:** n/a — atomicidade não é observável por HTTP; coberta pelo teste de integração com falha injetada (T12)
 - **Evidência:** `legacy/app/Repositories/BankAccountRepositoryEloquent.php:31-36` (transação + `LockTableCriteria`) e `legacy/app/Listeners/BankAccountUpdateBalanceListener.php:48` (extrato após o commit)
 - **Sonda:** `node tools/oraculo-sql.mjs PUT /api/bill_pays/213 …` mostra a ordem real: `UPDATE bill_pays` **fora** de transação → `START TRANSACTION` → `SELECT … FOR UPDATE` em `bank_accounts` → `UPDATE bank_accounts` → `COMMIT` → `INSERT INTO statements` **fora** de transação ✅
 - **Confiança:** alta (código + SQL observado)
@@ -72,12 +73,14 @@
 
 ### RN-CON-011 — Valores monetários são `float`
 - **Regra:** `value` de contas, `balance` de contas bancárias e `value`/`balance` do extrato são colunas `FLOAT`.
+- **Paridade:** n/a — tipo de coluna; coberto por teste de schema (T03)
 - **Evidência:** `legacy/database/migrations/2017_09_13_014016_create_bill_pays_table.php:20`, `2017_09_16_182802_create_bill_receives_table.php:20`, `2017_09_16_180047_add_balance_to_bank_accounts.php:18`, `2017_09_16_155447_create_statements_table.php:18-19`
 - **Confiança:** alta
 - **Suspeita de bug?** sim — dinheiro em ponto flutuante acumula erro de arredondamento
 
 ### RN-CON-012 — `done` tem default 0 em contas a receber, mas nenhum default em contas a pagar
 - **Regra:** `bill_receives.done` tem `DEFAULT 0`; `bill_pays.done` é `NOT NULL` **sem default**.
+- **Paridade:** n/a — default de coluna; coberto por teste de schema (T03)
 - **Evidência:** `legacy/database/migrations/2017_09_13_014016_create_bill_pays_table.php:21` — `->defalt(false)` (erro de digitação: o Laravel 5.3 aceita o método desconhecido em silêncio e não aplica o default); compare com `2017_09_16_182802_create_bill_receives_table.php:21` (`->default(false)`)
 - **Sonda:** `SHOW COLUMNS` no oráculo → `bill_pays.done Default NULL` · `bill_receives.done Default 0` ✅
 - **Confiança:** alta
@@ -124,3 +127,11 @@
 - **Sonda:** SQL observado na busca por período (ver RN-CON-017): `where ((date_due between …) or value = '1' and done = 1)` ✅
 - **Confiança:** alta
 - **Suspeita de bug?** sim — totais não correspondem à lista exibida
+
+### RN-CON-019 — Usuário sem cliente: login aceito, API falha com 500
+- **Regra:** um usuário com `client_id NULL` consegue o token (200), mas qualquer rota com tenant responde **500** — o landlord recusa tenant nulo. Não há vazamento de dados de outros clientes (falha fechada).
+- **Evidência:** `legacy/app/Http/Middleware/AddCliebtTenantMiddleware.php:21-23` + `vendor/hipsterjazzbo/landlord/src/TenantManager.php:72` (`TenantNullIdException`)
+- **Sonda:** usuário `sem-cliente@sonda.local` inserido via SQL no oráculo → login 200; `/api/bank_accounts`, `/api/statements`, `/api/bill_pays/*` → 500 ✅
+- **Paridade:** n/a — exige preparar dado via SQL (os casos só usam HTTP); coberto pelo e2e de tenant (T07)
+- **Confiança:** alta
+- **Suspeita de bug?** parcial — o isolamento está certo; o status não. Sistema novo: login recusa e API responde 403 (design §4)

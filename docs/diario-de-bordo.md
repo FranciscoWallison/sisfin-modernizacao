@@ -94,6 +94,25 @@
   JWT como risco aceito até o front novo) — **propostos**. `design.md` e `tasks.md` atualizados (T05–T07, T12–T14 maiores; T17 nova).
 - Estado: 9 casos de paridade passando contra o legado; rastreabilidade sem órfãos de requisito ou task.
 
+## Etapa 6 — Fechamento do AS-IS de `contas` · 25/09/2026
+
+**Objetivo:** enquanto o plano aguarda aprovação (o gate impede implementar tasks de um `tasks.md` em rascunho),
+responder as dúvidas que restavam e deixar a rastreabilidade sem nenhuma pendência.
+
+- **DUV-CON-005** (saldo × extrato): consulta no banco do oráculo → **0 de 50** contas divergem. A falha da RN-CON-007 é
+  teórica. Mas saldo e extrato concordam **também no erro** das RN-CON-009/010 — o extrato espelha o bug. 19 extratos
+  órfãos, todos gerados pelos próprios casos de exclusão.
+- **DUV-CON-006** (usuário sem cliente): usuário `sem-cliente@sonda.local` inserido via SQL **no banco do oráculo**
+  (dado de teste; some no próximo reset) → login **200**, e toda rota com tenant → **500**
+  (`TenantNullIdException`). Não vaza dados (falha fechada), mas com erro de servidor → **RN-CON-019**, ligada ao
+  REQ-CON-13 (sistema novo: login recusado e 403).
+- Regras que HTTP não enxerga (RN-CON-007 transação, 011 tipo de coluna, 012 default, 019 preparo via SQL) ganharam
+  `**Paridade:** n/a — … (Txx)`, dizendo qual task as cobre. `rastreabilidade.mjs` passou a entender isso e a falhar
+  se a justificativa não citar uma task.
+- Resultado: `rastreabilidade --strict` **passa** (nenhuma regra sem requisito, sem cobertura ou requisito sem task) →
+  ligado como obrigatório no CI.
+- Todas as 9 dúvidas do módulo estão respondidas ou decididas.
+
 **Próximo passo:** Francisco revisa `design.md`, `tasks.md`, ADR-004 e ADR-005 (e o adendo REQ-CON-11..13) e aprova o
 plano com `node tools/aprovar-tasks.mjs contas "Francisco"`. Depois, Fase A (T01–T08).
 

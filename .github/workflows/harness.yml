@@ -21,8 +21,8 @@ jobs:
         run: node --test tools/testes/harness.test.mjs
 
       - name: Rastreabilidade RN → REQ → Task → Paridade
-        # Sem --strict enquanto o módulo contas não tem TO-BE; ligar quando a 1ª spec for aprovada
-        run: node tools/rastreabilidade.mjs
+        # --strict: regra sem requisito, sem caso de paridade (ou n/a com task) ou requisito sem task falham o PR
+        run: node tools/rastreabilidade.mjs --strict
 
       - name: Subir o oráculo (legado Laravel 5.3 + MySQL 5.7)
         run: docker compose up -d --build

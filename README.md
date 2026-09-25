@@ -67,11 +67,11 @@ Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios 
 
 | Módulo | AS-IS | Paridade | TO-BE | Implementado |
 |---|---|---|---|---|
-| contas | ✅ 18 regras, 9 dúvidas, contrato | 🟡 8 casos (15 regras) | 🟡 REQ-01..10 aprovados (ADR-003) · adendo REQ-11..13, design (revisado por segurança) e tasks aguardando aprovação | ⚪ |
+| contas | ✅ 19 regras, 9 dúvidas (todas respondidas), contrato | ✅ 8 casos + 4 regras n/a cobertas por tasks | 🟡 REQ-01..10 aprovados (ADR-003) · adendo REQ-11..13, design (revisado por segurança) e tasks aguardando aprovação | ⚪ |
 | auth | 🟡 3 regras (controles de segurança) | ✅ 1 caso | 🟡 no REQ-CON-13 / ADR-005 | ⚪ |
+| categorias · contas-bancarias · bancos · fluxo-de-caixa · assinaturas | ⚪ | ⚪ | ⚪ | ⚪ |
 
 O passo a passo completo, com descobertas e lições, está no [diário de bordo](docs/diario-de-bordo.md).
-| categorias · contas-bancarias · bancos · fluxo-de-caixa · assinaturas · auth | ⚪ | ⚪ | ⚪ | ⚪ |
 
 ### Achados até agora (pelas sondas no oráculo)
 
@@ -83,3 +83,6 @@ O passo a passo completo, com descobertas e lições, está no [diário de bordo
 - **RN-CON-015** — valor negativo é aceito; pagar uma conta a pagar negativa credita o saldo.
 - **RN-CON-011** — dinheiro armazenado em `FLOAT`.
 - **RN-CON-012** — `->defalt(false)` numa migration: erro de digitação que o Laravel 5.3 aceitou em silêncio.
+- **RN-CON-016** — sem busca, a lista de contas vem vazia: `""` vira `value = 0` — e isso depende da versão do ICU.
+- **RN-CON-018** — os totais ignoram a busca por texto e erram a precedência `or … and done`.
+- **RN-CON-019** — usuário sem cliente loga, mas a API inteira responde 500 (falha fechada, sem vazamento).

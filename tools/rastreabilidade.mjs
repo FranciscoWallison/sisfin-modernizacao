@@ -18,11 +18,22 @@ const walk = (dir) =>
 const read = (p) => readFileSync(p, 'utf8');
 const ids = (text, re) => [...new Set(text.match(re) ?? [])];
 
-// Regras do legado (ignora as marcadas como obsoletas)
+// Regras do legado (ignora as marcadas como obsoletas). Regras com "**Paridade:** n/a — … (Txx)" não são
+// observáveis por HTTP e precisam dizer qual task as cobre.
+const semParidadeHttp = new Map(); // RN → justificativa
 const regras = walk(join(SPECS, 'legado', 'modulos'))
   .filter((p) => p.endsWith('regras.md'))
   .flatMap((p) =>
-    [...read(p).matchAll(/^### (~~)?(RN-[A-Z]+-\d+)/gm)].filter((m) => !m[1]).map((m) => m[2]),
+    read(p)
+      .split(/^### /m)
+      .slice(1)
+      .flatMap((bloco) => {
+        const m = bloco.match(/^(~~)?(RN-[A-Z]+-\d+)/);
+        if (!m || m[1]) return [];
+        const na = bloco.match(/\*\*Paridade:\*\*\s*n\/a\b(.*)/);
+        if (na) semParidadeHttp.set(m[2], na[1]);
+        return [m[2]];
+      }),
   );
 
 // Requisitos do TO-BE e suas origens
@@ -47,14 +58,17 @@ const linhas = regras.map((rn) => {
     RN: rn,
     REQ: reqs.join(', ') || '—',
     Task: reqs.some((r) => reqComTask.has(r)) ? '✅' : '—',
-    Paridade: rnComParidade.has(rn) ? '✅' : '—',
+    Paridade: rnComParidade.has(rn) ? '✅' : semParidadeHttp.has(rn) ? 'n/a' : '—',
   };
 });
 console.table(linhas);
 
 const orfaos = {
   'RN sem requisito': regras.filter((rn) => !rnComReq.has(rn)),
-  'RN sem caso de paridade': regras.filter((rn) => !rnComParidade.has(rn)),
+  'RN sem caso de paridade': regras.filter((rn) => !rnComParidade.has(rn) && !semParidadeHttp.has(rn)),
+  'RN com paridade n/a sem task que a cubra (Txx)': [...semParidadeHttp]
+    .filter(([, justificativa]) => !/\bT\d{2}\b/.test(justificativa))
+    .map(([rn]) => rn),
   'REQ sem task': [...requisitos.keys()].filter((r) => !reqComTask.has(r)),
 };
 let total = 0;

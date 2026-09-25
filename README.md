@@ -57,8 +57,8 @@ servida duas vezes: só muda a API por trás. É o *Strangler Fig* visível.
 | http://localhost:8083/app#!/login | **Versão nova** — mesma tela → API NestJS (:3300) · selo verde |
 | http://localhost:3300/health | API nova |
 
-Login: `cliente1@user.com` / `secret`. Na versão nova, **contas bancárias, plano de contas e extrato** já funcionam;
-contas a pagar/receber chegam na Fase B; fluxo de caixa e bancos ainda não foram migrados (a tela mostra erro).
+Login: `cliente1@user.com` / `secret`. Na versão nova já funcionam **dashboard, contas a pagar/receber, contas bancárias,
+plano de contas e extrato**; fluxo de caixa e bancos ainda não foram migrados (a tela mostra erro ou fica carregando).
 Os dados do banco novo vêm do legado: `node tools/migrar-dados.mjs`.
 
 | Versão antiga | Versão nova |
@@ -86,7 +86,7 @@ Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios 
 
 | Módulo | AS-IS | Paridade | TO-BE | Implementado |
 |---|---|---|---|---|
-| contas | ✅ 19 regras, 9 dúvidas (todas respondidas), contrato | ✅ 8 casos + 4 regras n/a cobertas por tasks | ✅ requirements, design e tasks aprovados (hash `d854ed6545ef`) | 🟡 Fase A em andamento — ver [progresso](.specs/novo/contas/progresso.md) |
+| contas | ✅ 19 regras, 9 dúvidas (todas respondidas), contrato | ✅ 8 casos + 4 regras n/a cobertas por tasks | ✅ requirements, design e tasks aprovados (hash `d854ed6545ef`) | ✅ **paridade 9/9 no sistema novo** · Fase C em andamento — ver [progresso](.specs/novo/contas/progresso.md) |
 | auth | 🟡 3 regras (controles de segurança) | ✅ 1 caso | 🟡 no REQ-CON-13 / ADR-005 | ⚪ |
 | categorias · contas-bancarias · bancos · fluxo-de-caixa · assinaturas | ⚪ | ⚪ | ⚪ | ⚪ |
 

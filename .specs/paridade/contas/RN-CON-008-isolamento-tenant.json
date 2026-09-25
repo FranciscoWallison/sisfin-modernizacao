@@ -73,6 +73,38 @@
       }
     },
     {
+      "nome": "categoria_do_outro",
+      "usuario": "outro_cliente",
+      "rota": "/api/category_expenses",
+      "salvar": {
+        "categoria_outro": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "conta_bancaria_do_outro",
+      "usuario": "outro_cliente",
+      "rota": "/api/bank_accounts",
+      "salvar": {
+        "conta_outro": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "alterar_outro_cliente_corpo_valido",
+      "usuario": "outro_cliente",
+      "metodo": "PUT",
+      "rota": "/api/bill_pays/{{conta_pagar}}",
+      "corpo": {
+        "name": "INVADIDO",
+        "date_due": "2027-03-01",
+        "value": 999,
+        "done": true,
+        "category_id": "{{categoria_outro}}",
+        "bank_account_id": "{{conta_outro}}"
+      }
+    },
+    {
       "nome": "excluir_outro_cliente",
       "usuario": "outro_cliente",
       "metodo": "DELETE",
@@ -101,6 +133,9 @@
     "alterar_outro_cliente": {
       "status": 404
     },
+    "alterar_outro_cliente_corpo_valido": {
+      "status": 404
+    },
     "excluir_outro_cliente": {
       "status": 404
     },
@@ -113,7 +148,16 @@
     }
   },
   "capturado": {
-    "em": "2026-09-24",
+    "em": "2026-09-25",
     "de": "http://localhost:8081"
+  },
+  "divergencias": {
+    "adr": "ADR-003",
+    "motivo": "REQ-CON-01 tornou category_id e bank_account_id obrigatórios: corpo incompleto é 422 antes de procurar a conta. Com corpo válido, outro cliente continua recebendo 404 (passo alterar_outro_cliente_corpo_valido).",
+    "esperado": {
+      "alterar_outro_cliente": {
+        "status": 422
+      }
+    }
   }
 }

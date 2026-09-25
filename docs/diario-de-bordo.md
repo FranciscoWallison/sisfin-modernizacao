@@ -596,6 +596,37 @@ plano com `node tools/aprovar-tasks.mjs contas "Francisco"`. Depois, Fase A (T01
 - Fora do `contas`: `/api/cash_flows*` e `/api/banks` ainda não existem no novo; logos de banco não carregam em nenhum dos
   dois (falta `storage:link` no container do legado).
 
+## Etapa 13 — Fase B: o módulo `contas` (T09–T14) · 25/09/2026
+
+**Objetivo:** `/api/bill_pays` e `/api/bill_receives` completos, com aceite pela paridade no sistema novo.
+
+- **Contrato antes do código:** capturei no oráculo o formato de `include=category,bankAccount` (categoria com
+  `depth: null` e sem `children`) e li o modelo do SPA para saber o que ele envia (ids e valor às vezes em texto).
+- **Domínio puro (T09–T11):** vencimentos, tabela de movimentos e busca BR. Dinheiro em **centavos inteiros**. 38 testes.
+- **T12:** repositório com `SELECT … FOR UPDATE` (conta primeiro, depois contas bancárias em ordem de id) e serviço que
+  grava conta + saldo + extrato numa transação. Integração no Postgres: falha injetada → nada gravado; pagamentos
+  simultâneos → um débito. **Teste de mutação:** tirei o `FOR UPDATE` e o teste de concorrência falhou 3/3 (débito em
+  dobro) — prova de que o teste testa o que diz testar.
+- **Primeira rodada da paridade no sistema novo: 8 de 9 casos falharam.** Causa única: o DTO convertia `value` para texto
+  (para não passar por ponto flutuante) e depois `@Min`/`@Max` comparavam **texto com número** → toda conta dava 422.
+  Validador próprio sobre o texto → **8/9**.
+- O caso que sobrou não era bug: PUT de outro cliente com corpo **incompleto** dá 422 no novo (campos obrigatórios —
+  ADR-003) e 404 no legado. Registrado como divergência **e o caso foi reforçado** com um PUT de corpo válido, que dá 404
+  nos dois — o isolamento continua provado. → **9/9**.
+- Minhas sondas bateram no rate limit da própria API nova (429) — confirmação involuntária de que ele funciona.
+- Na tela nova (SPA), **contas a pagar lista as contas** (no legado a lista vem vazia — RN-CON-016) e o dashboard mostra
+  "A pagar hoje R$903,00", igual ao legado.
+- "Hoje" dos totais ficou em **UTC** como no legado: o design dizia `America/Sao_Paulo`, o que seria correção sem ADR.
+
+## Etapa 14 — Fase C: CI e segurança (T15, T17) · 25/09/2026
+
+- **T17:** 17 testes de segurança transversais (mass assignment, limites de valor, teto de repetição, log sem segredos).
+- **T15:** CI com job `sistema` que reproduz o ciclo inteiro — sobe legado e novo, ETL, espelho, paridade nos dois alvos,
+  rastreabilidade estrita e testes de integração com banco. Ensaio local na mesma sequência: **tudo verde, 134 testes**.
+  A execução real no GitHub acontece no próximo push.
+- **T16:** `security-reviewer` rodando sobre o **código** (a primeira revisão foi sobre as specs).
+- Tropeço de processo: um script de documentação passado inline pelo shell quebrou nas aspas; passou a ficar num arquivo.
+
 ---
 
 ## Lições até aqui
@@ -614,3 +645,5 @@ plano com `node tools/aprovar-tasks.mjs contas "Francisco"`. Depois, Fase A (T01
 9. **Teste que limpa dados precisa de trava.** Um `where` com `undefined` vira "sem filtro".
 10. **O contrato é o tráfego real, não o que se escreveu sobre ele.** O front usava parâmetros que nenhum documento
     mencionava; só apareceram ao pôr a tela de verdade na frente da API nova.
+11. **Teste de mutação valida o teste.** Um teste de concorrência verde não prova nada até falhar sem o lock.
+12. **Divergência que aparece no fim vira ADR + caso reforçado**, nunca ajuste do "esperado".

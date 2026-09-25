@@ -204,6 +204,9 @@ Controles que **não podem se perder** (revisão #3, #4; RN-AUT-001..003):
 | Data | Mudança | Motivo |
 |---|---|---|
 | 25/09/2026 | API exposta no host em **:3300** (continua :3000 dentro do container) | A porta 3000 do host já estava em uso por outro processo local (T01) |
+| 25/09/2026 | "Hoje" dos totais em **UTC** (não America/Sao_Paulo) | O legado usa UTC (`config/app.php`); mudar o fuso é correção de comportamento e exigiria ADR — mantida a paridade (T14) |
+| 25/09/2026 | Valor validado por um validador próprio (`ValorMonetario`) sobre o texto | `@Min`/`@Max` comparam número; com o valor já em texto (para não passar por ponto flutuante) toda conta dava 422 (T13) |
+| 25/09/2026 | Notação exponencial só é rejeitada quando chega como TEXTO | Número JSON `1e3` já chega convertido (1000) pelo parser; detectar exigiria ler o corpo cru — risco baixo |
 | 25/09/2026 | Rate limit com guard próprio (janela fixa de 60 s) em vez de `@nestjs/throttler` | Reproduz exatamente o `throttle:60,1` do legado, com os mesmos cabeçalhos; uma dependência a menos (T06) |
 | 25/09/2026 | Lockout, blacklist e rate limit em memória | Uma instância hoje; com mais instâncias, mover para Redis (T06) |
 | 25/09/2026 | NestJS **11.2.6** e Prisma **6.19.3** (não 12 / 7-8) | Nest 12 é recente e muda a base de módulos; o `latest` do Prisma é um RC da v8 — preferidas as últimas estáveis conhecidas |

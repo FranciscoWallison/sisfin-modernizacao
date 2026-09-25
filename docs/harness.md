@@ -29,7 +29,8 @@ não depende de alguém escrever os testes certos: ele compara com a realidade (
 | Rastreabilidade | sensor computacional | comportamento | `tools/rastreabilidade.mjs` | ✅ |
 | Validação de specs ao editar | sensor computacional | manutenibilidade | hook `depois-de-editar` | ✅ |
 | Typecheck ao editar | sensor computacional | manutenibilidade | hook `depois-de-editar` | ✅ ~4 s por edição em `api/` |
-| CI | sensor computacional | todas | `.github/workflows/harness.yml` | 🟡 escrito, 1ª execução no próximo push |
+| CI | sensor computacional | todas | `.github/workflows/harness.yml` — jobs `api` (tipos, camadas, unitários) e `sistema` (legado + novo, ETL, espelho, paridade nos 2 alvos, integração) | 🟡 ensaio local verde; 1ª execução real no próximo push |
+| Teste de mutação | sensor de sensor | comportamento | remover o `FOR UPDATE` → o teste de concorrência tem de falhar | ✅ falhou 3/3 (T12) |
 | Regras de camadas | sensor computacional | arquitetura | `api/.dependency-cruiser.cjs` (hook + CI) + lint de SQL cru | ✅ mensagens dizem o que fazer |
 | Isolamento de tenant | sensor computacional | arquitetura | teste estrutural em `api/` | ⏳ junto com o `design.md` |
 | Revisão de segurança | sensor inferencial | arquitetura | subagente `security-reviewer` | ✅ 1ª execução: 12 achados nas specs de `contas` (`docs/revisoes/`) |

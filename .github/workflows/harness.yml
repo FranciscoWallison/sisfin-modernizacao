@@ -1,6 +1,7 @@
 name: harness
 
-# Sensores computacionais em todo PR: o harness funciona, o oráculo sobe e a paridade passa.
+# Sensores computacionais em todo PR (T15). Gate: o harness funciona, a rastreabilidade está completa, o legado e o
+# sistema novo sobem, os dados migram, as leituras são idênticas e a paridade passa nos dois alvos.
 on:
   pull_request:
   push:
@@ -8,7 +9,7 @@ on:
 
 jobs:
   api:
-    # Sensores do sistema novo (T02): tipos, camadas e testes unitários/estruturais
+    # Sensores rápidos do sistema novo: tipos, camadas e testes unitários (integração roda no job "sistema")
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -27,12 +28,12 @@ jobs:
         run: npm run typecheck
       - name: Regras de camadas (dependency-cruiser)
         run: npm run arquitetura
-      - name: Testes
+      - name: Testes unitários e e2e sem banco
         run: npx jest
 
-  harness:
+  sistema:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -43,27 +44,49 @@ jobs:
       - name: Testes do próprio harness (hooks, aprovação por hash)
         run: node --test tools/testes/harness.test.mjs
 
-      - name: Rastreabilidade RN → REQ → Task → Paridade
-        # --strict: regra sem requisito, sem caso de paridade (ou n/a com task) ou requisito sem task falham o PR
+      - name: Rastreabilidade RN → REQ → Task → Paridade (estrita)
         run: node tools/rastreabilidade.mjs --strict
 
-      - name: Subir o oráculo (legado Laravel 5.3 + MySQL 5.7)
-        run: docker compose up -d --build
+      - name: Dependências das ferramentas (ETL)
+        working-directory: tools
+        run: npm ci --no-audit --no-fund
 
-      - name: Esperar o oráculo
+      - name: Subir legado (Laravel 5.3 + MySQL 5.7) e sistema novo (NestJS + Postgres 16)
+        run: docker compose up -d --build legacy-db legacy-app api-db api
+
+      - name: Esperar os dois sistemas
         run: |
-          for i in $(seq 1 60); do
-            if docker compose logs legacy-app 2>&1 | grep -q "resuming normal operations"; then exit 0; fi
+          for i in $(seq 1 90); do
+            if docker compose logs legacy-app 2>&1 | grep -q "resuming normal operations" && curl -sf localhost:3300/health; then exit 0; fi
             sleep 5
           done
-          docker compose logs legacy-app
+          docker compose logs legacy-app api | tail -80
           exit 1
 
-      - name: Paridade contra o legado
+      - name: Migração de dados (ETL legado → novo)
+        run: node tools/migrar-dados.mjs
+
+      - name: Espelho de leitura (logo após o ETL — GETs idênticos em valores)
+        run: node tools/espelho.mjs
+
+      - name: Paridade contra o legado (o oráculo continua igual ao golden master)
         run: node tools/paridade.mjs
 
-      - name: Logs do oráculo em caso de falha
+      - name: Paridade contra o sistema novo (com as divergências aprovadas por ADR)
+        run: node tools/paridade.mjs --base http://localhost:3300 --alvo novo
+
+      - name: Testes de integração da API (tenant, transação, concorrência)
+        working-directory: api
+        env:
+          DATABASE_URL: postgresql://sisfin:sisfin@localhost:54321/sisfin
+        run: |
+          npm ci --no-audit --no-fund
+          npx prisma generate
+          npx jest
+
+      - name: Logs em caso de falha
         if: failure()
         run: |
           docker compose logs legacy-app | tail -100
+          docker compose logs api | tail -100
           docker compose exec -T legacy-app sh -c 'tail -50 storage/logs/*.log' || true

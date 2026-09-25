@@ -1,0 +1,230 @@
+{
+  "rn": [
+    "RN-FLX-003",
+    "RN-FLX-004",
+    "RN-FLX-005",
+    "RN-FLX-006",
+    "RN-FLX-007"
+  ],
+  "descricao": "GET /api/cash_flows na janela que o legado usa (fev–dez/2018, 'primeiro mês' = jan/2018). No sistema novo a mesma janela é pedida com ?start=2018-02 (o legado ignora o parâmetro). Deltas por mês e por categoria raiz; isolamento entre clientes.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    },
+    "outro_cliente": {
+      "email": "cliente3@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "categorias_despesa",
+      "rota": "/api/category_expenses",
+      "salvar": {
+        "raiz_despesa": "data.0.id",
+        "filha_despesa": "data.0.children.data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "categorias_receita",
+      "rota": "/api/category_revenues",
+      "salvar": {
+        "raiz_receita": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "conta_bancaria",
+      "rota": "/api/bank_accounts",
+      "salvar": {
+        "conta": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "antes",
+      "rota": "/api/cash_flows?start=2018-02",
+      "salvar": {
+        "a": ""
+      },
+      "registrar": false
+    },
+    {
+      "nome": "antes_outro",
+      "usuario": "outro_cliente",
+      "rota": "/api/cash_flows?start=2018-02",
+      "salvar": {
+        "outro_antes": ""
+      },
+      "registrar": false
+    },
+    {
+      "nome": "jan_15_recebida",
+      "metodo": "POST",
+      "rota": "/api/bill_receives",
+      "corpo": {
+        "name": "PAR-FLX3-{{execucao}}",
+        "date_due": "2018-01-15",
+        "value": 10,
+        "done": true,
+        "category_id": "{{raiz_receita}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "jan_31_recebida",
+      "metodo": "POST",
+      "rota": "/api/bill_receives",
+      "corpo": {
+        "name": "PAR-FLX3-{{execucao}}",
+        "date_due": "2018-01-31",
+        "value": 5,
+        "done": true,
+        "category_id": "{{raiz_receita}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "jan_31_a_receber",
+      "metodo": "POST",
+      "rota": "/api/bill_receives",
+      "corpo": {
+        "name": "PAR-FLX3-{{execucao}}",
+        "date_due": "2018-01-31",
+        "value": 7,
+        "done": false,
+        "category_id": "{{raiz_receita}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "mar_10_a_pagar_categoria_filha",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-FLX3-{{execucao}}",
+        "date_due": "2018-03-10",
+        "value": 30,
+        "done": false,
+        "category_id": "{{filha_despesa}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "mar_20_paga_categoria_raiz",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-FLX3-{{execucao}}",
+        "date_due": "2018-03-20",
+        "value": 4,
+        "done": true,
+        "category_id": "{{raiz_despesa}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "dez_31_a_receber",
+      "metodo": "POST",
+      "rota": "/api/bill_receives",
+      "corpo": {
+        "name": "PAR-FLX3-{{execucao}}",
+        "date_due": "2018-12-31",
+        "value": 3,
+        "done": false,
+        "category_id": "{{raiz_receita}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "jan_2019_fora",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-FLX3-{{execucao}}",
+        "date_due": "2019-01-01",
+        "value": 50,
+        "done": false,
+        "category_id": "{{raiz_despesa}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "depois",
+      "rota": "/api/cash_flows?start=2018-02",
+      "salvar": {
+        "d": ""
+      }
+    },
+    {
+      "nome": "depois_outro",
+      "usuario": "outro_cliente",
+      "rota": "/api/cash_flows?start=2018-02",
+      "salvar": {
+        "outro_depois": ""
+      }
+    }
+  ],
+  "derivar": {
+    "formato_do_mes": "d.period_list.every(p => /^\\d{4}-\\d{2}$/.test(p.period))",
+    "primeiro_mes_receitas_delta": "((l, p) => l.find(x => x.period === p)?.revenues.total ?? 0)(d.period_list, '2018-01') - ((l, p) => l.find(x => x.period === p)?.revenues.total ?? 0)(a.period_list, '2018-01')",
+    "marco_despesas_delta": "((l, p) => l.find(x => x.period === p)?.expenses.total ?? 0)(d.period_list, '2018-03') - ((l, p) => l.find(x => x.period === p)?.expenses.total ?? 0)(a.period_list, '2018-03')",
+    "dezembro_receitas_delta": "((l, p) => l.find(x => x.period === p)?.revenues.total ?? 0)(d.period_list, '2018-12') - ((l, p) => l.find(x => x.period === p)?.revenues.total ?? 0)(a.period_list, '2018-12')",
+    "janeiro_2019_fora_da_janela": "!d.period_list.some(p => p.period === '2019-01')",
+    "raiz_despesa_marco_delta": "((c, id, p) => c.find(x => x.id === id)?.periods.filter(y => y.period === p).reduce((s, y) => s + Number(y.total), 0) ?? 0)(d.categories_period.expenses.data, raiz_despesa, '2018-03') - ((c, id, p) => c.find(x => x.id === id)?.periods.filter(y => y.period === p).reduce((s, y) => s + Number(y.total), 0) ?? 0)(a.categories_period.expenses.data, raiz_despesa, '2018-03')",
+    "categoria_filha_nao_aparece_sozinha": "!d.categories_period.expenses.data.some(x => x.id === filha_despesa)",
+    "saldo_antes_do_primeiro_mes_inalterado": "d.balance_before_first_month === a.balance_before_first_month",
+    "outro_cliente_nao_ve_nada": "JSON.stringify(outro_depois) === JSON.stringify(outro_antes)"
+  },
+  "esperado": {
+    "jan_15_recebida": {
+      "status": 201
+    },
+    "jan_31_recebida": {
+      "status": 201
+    },
+    "jan_31_a_receber": {
+      "status": 201
+    },
+    "mar_10_a_pagar_categoria_filha": {
+      "status": 201
+    },
+    "mar_20_paga_categoria_raiz": {
+      "status": 201
+    },
+    "dez_31_a_receber": {
+      "status": 201
+    },
+    "jan_2019_fora": {
+      "status": 201
+    },
+    "depois": {
+      "status": 200
+    },
+    "depois_outro": {
+      "status": 200
+    },
+    "formato_do_mes": true,
+    "primeiro_mes_receitas_delta": 5,
+    "marco_despesas_delta": 34,
+    "dezembro_receitas_delta": 3,
+    "janeiro_2019_fora_da_janela": true,
+    "raiz_despesa_marco_delta": 34,
+    "categoria_filha_nao_aparece_sozinha": true,
+    "saldo_antes_do_primeiro_mes_inalterado": true,
+    "outro_cliente_nao_ve_nada": true
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  },
+  "divergencias": {
+    "adr": "ADR-006",
+    "motivo": "REQ-FLX-04: primeiro mês inteiro, só pagas (o legado considera só o último dia).",
+    "esperado": {
+      "primeiro_mes_receitas_delta": 15
+    }
+  }
+}

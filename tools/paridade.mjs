@@ -30,9 +30,9 @@ const filtros = args.filter((a, i) => !a.startsWith('--') && !valoresDeOpcao.has
 const walk = (d) =>
   readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirectory() ? walk(join(d, f)) : [join(d, f)]));
 
-// "data.0.id" → valor
+// "data.0.id" → valor; "" → o corpo inteiro
 const pegar = (obj, caminho) =>
-  caminho.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
+  caminho === '' ? obj : caminho.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
 
 // "{{x}}" sozinho mantém o tipo; embutido em texto vira string
 const substituir = (v, vars) => {
@@ -55,8 +55,19 @@ const projetar = (valor, campos) => {
 
 const api = criarCliente(BASE);
 
+// Datas relativas (UTC, como o legado): hoje, daqui_N_dias (N = 1..90), mes_atual, mes_anterior (aaaa-mm)
+function variaveisDeData() {
+  const dia = (d) => d.toISOString().slice(0, 10);
+  const agora = new Date();
+  const hoje = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate()));
+  const vars = { hoje: dia(hoje), mes_atual: dia(hoje).slice(0, 7) };
+  vars.mes_anterior = dia(new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth() - 1, 1))).slice(0, 7);
+  for (let n = 1; n <= 90; n++) vars[`daqui_${n}_dias`] = dia(new Date(hoje.getTime() + n * 86_400_000));
+  return vars;
+}
+
 async function executar(caso) {
-  const vars = { execucao: Date.now().toString(36) };
+  const vars = { execucao: Date.now().toString(36), ...variaveisDeData() };
   const resultado = {};
   for (const passo of caso.passos) {
     const usuario = caso.usuarios[passo.usuario ?? 'padrao'];

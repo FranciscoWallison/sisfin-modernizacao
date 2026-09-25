@@ -1,0 +1,122 @@
+{
+  "rn": [
+    "RN-FLX-001"
+  ],
+  "descricao": "GET /api/cash_flows/monthly: soma por DIA, nos próximos 30 dias, de contas a receber (revenues) e a pagar (expenses), pagas ou não.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "categoria_despesa",
+      "rota": "/api/category_expenses",
+      "salvar": {
+        "cat_despesa": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "categoria_receita",
+      "rota": "/api/category_revenues",
+      "salvar": {
+        "cat_receita": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "conta_bancaria",
+      "rota": "/api/bank_accounts",
+      "salvar": {
+        "conta": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "antes",
+      "rota": "/api/cash_flows/monthly",
+      "salvar": {
+        "lista_antes": "period_list"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "criar_a_pagar_em_aberto",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-FLX1-{{execucao}}",
+        "date_due": "{{daqui_5_dias}}",
+        "value": 10,
+        "done": false,
+        "category_id": "{{cat_despesa}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "criar_a_receber_paga",
+      "metodo": "POST",
+      "rota": "/api/bill_receives",
+      "corpo": {
+        "name": "PAR-FLX1-{{execucao}}",
+        "date_due": "{{daqui_5_dias}}",
+        "value": 20,
+        "done": true,
+        "category_id": "{{cat_receita}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "criar_fora_da_janela",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-FLX1-{{execucao}}",
+        "date_due": "{{daqui_45_dias}}",
+        "value": 999,
+        "done": false,
+        "category_id": "{{cat_despesa}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "depois",
+      "rota": "/api/cash_flows/monthly",
+      "salvar": {
+        "lista_depois": "period_list"
+      }
+    }
+  ],
+  "derivar": {
+    "formato_do_dia": "lista_depois.every(p => /^\\d{4}-\\d{2}-\\d{2}$/.test(p.period))",
+    "ordenado_por_dia": "lista_depois.every((p, i, a) => i === 0 || a[i-1].period < p.period)",
+    "delta_despesas_no_dia": "(lista_depois.find(p => p.period === daqui_5_dias)?.expenses.total ?? 0) - (lista_antes.find(p => p.period === daqui_5_dias)?.expenses.total ?? 0)",
+    "delta_receitas_no_dia": "(lista_depois.find(p => p.period === daqui_5_dias)?.revenues.total ?? 0) - (lista_antes.find(p => p.period === daqui_5_dias)?.revenues.total ?? 0)",
+    "janela_de_hoje_a_30_dias": "lista_depois.every(p => p.period >= hoje && p.period <= daqui_30_dias)"
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  },
+  "esperado": {
+    "criar_a_pagar_em_aberto": {
+      "status": 201
+    },
+    "criar_a_receber_paga": {
+      "status": 201
+    },
+    "criar_fora_da_janela": {
+      "status": 201
+    },
+    "depois": {
+      "status": 200
+    },
+    "formato_do_dia": true,
+    "ordenado_por_dia": true,
+    "delta_despesas_no_dia": 10,
+    "delta_receitas_no_dia": 20,
+    "janela_de_hoje_a_30_dias": true
+  }
+}

@@ -653,6 +653,36 @@ plano com `node tools/aprovar-tasks.mjs contas "Francisco"`. Depois, Fase A (T01
 **Módulo `contas` concluído (T01–T18).** Próximo: primeira execução real do CI no push; depois, escolher o próximo
 módulo (fluxo de caixa é o mais visível na tela — é o único gráfico do dashboard que ainda não carrega).
 
+## Etapa 16 — Módulo `fluxo-de-caixa`: levantamento e proposta · 25/09/2026
+
+**Objetivo:** o próximo módulo — é o único bloco do dashboard que não carrega na versão nova.
+
+- **Arqueologia** em `CashFlowsController` e `CashFlowRepositoryTrait`, e **SQL observado** com `oraculo-sql`. Achados:
+  - **A janela de `/api/cash_flows` é fixa no código: fev–dez/2018** (`new Carbon('2018-02-01')`). A tela de fluxo de caixa
+    do legado aparece **sempre vazia** com dados atuais. A tela calcula o "primeiro mês" como o mês anterior a hoje — ou
+    seja, espera a janela a partir do mês atual; a data fixa foi um atalho da época do TCC.
+  - O **"primeiro mês"** (realizado) passa a mesma data como início e fim → só entram contas pagas que vencem **no último
+    dia** do mês. Provado: recebidas nos dias 15 (10) e 31 (5) → o legado mostra **5**.
+  - O corte do saldo anterior é `created_at <= 'aaaa-mm-dd'` → exclui o que foi lançado durante o último dia.
+  - O filtro de cliente só vale na categoria raiz; filhas e contas não são filtradas. **Não há vazamento no seed** (0 raízes
+    com filhas de outro cliente), mas o isolamento depende da integridade da árvore — e a criação de categoria no legado
+    desliga o tenant.
+- **Hipótese minha que caiu:** achei que "voltar 2 meses" para o saldo anterior fosse bug. Não é: o saldo é *antes do
+  primeiro mês*, que já é o mês anterior ao início.
+- **Paridade apesar da janela fixa:** o legado ignora parâmetros, então os casos criam dados **na janela de 2018** e o
+  sistema novo será comparado nela via `?start=2018-02` (parâmetro novo, proposto no ADR-006).
+- **O executor de paridade ganhou datas relativas** (`hoje`, `daqui_N_dias`, `mes_atual`, `mes_anterior`, em UTC) e
+  `salvar` com caminho vazio (corpo inteiro). Dois cuidados de estabilidade: a checagem "fora da janela" virou uma
+  afirmação sobre a janela inteira, e o caso da janela padrão deixou de depender da ordem de execução dos casos
+  (num oráculo zerado, como no CI, ele roda antes do caso de 2018).
+- 3 casos (`RN-FLX-001`, `002`, `003-a-007`) estáveis no legado; divergências do ADR-006 registradas → `--alvo novo`
+  contra o legado falha exatamente nos 2 casos corrigidos.
+- TO-BE em rascunho: REQ-FLX-01..07, **ADR-006 (proposto)**, design (SQL agregado com `client_id` nas três tabelas, janela
+  pura, montagem pura), tasks F01–F07.
+
+**Próximo passo:** Francisco decide as DUV-FLX-001..004 (ADR-006) e aprova o plano com
+`node tools/aprovar-tasks.mjs fluxo-de-caixa "Francisco"`.
+
 ---
 
 ## Lições até aqui
@@ -673,4 +703,5 @@ módulo (fluxo de caixa é o mais visível na tela — é o único gráfico do d
     mencionava; só apareceram ao pôr a tela de verdade na frente da API nova.
 11. **Teste de mutação valida o teste.** Um teste de concorrência verde não prova nada até falhar sem o lock.
 12. **Divergência que aparece no fim vira ADR + caso reforçado**, nunca ajuste do "esperado".
+14. **Oráculo com bug de janela ainda serve de oráculo:** crie os dados onde ele olha (2018) e compare o novo lá.
 13. **Hipótese de revisor vira teste que falha antes da correção.** Três de três se confirmaram — e o teste fica como sensor.

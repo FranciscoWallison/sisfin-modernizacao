@@ -1,0 +1,76 @@
+{
+  "rn": [
+    "RN-FLX-002"
+  ],
+  "descricao": "GET /api/cash_flows SEM parâmetro (é o que a tela chama): a janela deveria começar no mês atual — a tela calcula o 'primeiro mês' como o mês anterior a hoje. O legado fixa fev/2018 no código.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "categoria",
+      "rota": "/api/category_expenses",
+      "salvar": {
+        "cat": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "conta_bancaria",
+      "rota": "/api/bank_accounts",
+      "salvar": {
+        "conta": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "criar_hoje",
+      "metodo": "POST",
+      "rota": "/api/bill_pays",
+      "corpo": {
+        "name": "PAR-FLX2-{{execucao}}",
+        "date_due": "{{hoje}}",
+        "value": 10,
+        "done": false,
+        "category_id": "{{cat}}",
+        "bank_account_id": "{{conta}}"
+      }
+    },
+    {
+      "nome": "fluxo",
+      "rota": "/api/cash_flows",
+      "salvar": {
+        "f": ""
+      }
+    }
+  ],
+  "derivar": {
+    "mes_atual_na_janela": "f.period_list.some(p => p.period === mes_atual)",
+    "janela_de_2018": "f.period_list.every(p => p.period.startsWith('2018'))"
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  },
+  "esperado": {
+    "criar_hoje": {
+      "status": 201
+    },
+    "fluxo": {
+      "status": 200
+    },
+    "mes_atual_na_janela": false,
+    "janela_de_2018": true
+  },
+  "divergencias": {
+    "adr": "ADR-006",
+    "motivo": "REQ-FLX-02: janela a partir do mês atual (o legado fixa 2018).",
+    "esperado": {
+      "mes_atual_na_janela": true,
+      "janela_de_2018": false
+    }
+  }
+}

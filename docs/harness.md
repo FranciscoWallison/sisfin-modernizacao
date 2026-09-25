@@ -37,7 +37,7 @@ não depende de alguém escrever os testes certos: ele compara com a realidade (
 ```bash
 docker compose up -d --build                         # oráculo em :8081 (MySQL :33061)
 node tools/paridade.mjs                              # golden master contra o legado
-node tools/paridade.mjs --base http://localhost:3000 --alvo novo  # contra o novo, com divergências aprovadas (ADR)
+node tools/paridade.mjs --base http://localhost:3300 --alvo novo  # contra o novo, com divergências aprovadas (ADR)
 node tools/oraculo-sql.mjs PUT /api/bill_pays/12 '{…}' # SQL que a requisição dispara no legado
 node tools/rastreabilidade.mjs                       # RN → REQ → Task → Paridade
 node tools/aprovar-tasks.mjs contas "Francisco"      # HUMANO aprova o plano (grava o hash)

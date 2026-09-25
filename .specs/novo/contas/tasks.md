@@ -1,4 +1,4 @@
-Status: rascunho
+Status: aprovado · Aprovado por: Francisco · Em: 2026-09-25 · Hash: d854ed6545ef
 
 # Tasks — módulo `contas`
 

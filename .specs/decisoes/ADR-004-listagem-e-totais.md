@@ -1,6 +1,6 @@
 # ADR-004 — Listagem e totais de contas no sistema novo
 
-- **Status:** proposto — aguardando aprovação do Francisco
+- **Status:** aceito — aprovado por Francisco em 25/09/2026 (junto com o plano, `tasks.md` hash d854ed6545ef)
 - **Data:** 25/09/2026
 
 ## Contexto
@@ -14,7 +14,7 @@ O `oraculo-sql` mostrou três problemas na listagem de contas (RN-CON-016..018):
 2. `bill_data` ignora a busca por texto — os totais não batem com a lista.
 3. Com busca por período, falta parênteses entre o filtro e `done`: `total_paid` soma contas não pagas.
 
-## Decisão (proposta)
+## Decisão
 
 - Busca vazia ou ausente → sem filtro (lista tudo do cliente).
 - Mantém a semântica de busca do legado (texto OU período BR OU valor BR), sempre com E no filtro de cliente.

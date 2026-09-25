@@ -1,6 +1,6 @@
 # ADR-005 — Segurança do `auth-compat` e controles transversais entram junto com `contas`
 
-- **Status:** proposto — aguardando aprovação do Francisco
+- **Status:** aceito — aprovado por Francisco em 25/09/2026 (junto com o plano, `tasks.md` hash d854ed6545ef)
 - **Data:** 25/09/2026
 
 ## Contexto
@@ -10,7 +10,7 @@ O design original deixava logout, revogação, lockout e rate limit "para o mód
 controles (RN-AUT-001..003): adiar significaria colocar em produção um sistema **menos seguro** que o de 2017 —
 por exemplo, um token de logout continuaria valendo por até 60 minutos.
 
-## Decisão (proposta)
+## Decisão
 
 1. `auth-compat` entrega junto com `contas`: lockout (5 erros → 403), rate limit 60/min, logout com blacklist de `jti`,
    HS256 fixo com claims obrigatórias, segredo ≥ 32 bytes e **diferente do legado**.

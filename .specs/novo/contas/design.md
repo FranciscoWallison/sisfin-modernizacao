@@ -1,8 +1,8 @@
-Status: rascunho — aguardando aprovação do Francisco
+Status: aprovado — Francisco, 25/09/2026 (com o plano, hash d854ed6545ef). Mudanças posteriores ficam registradas no fim do arquivo.
 
 # Design — módulo `contas` (TO-BE)
 
-> Implementa `requirements.md` (REQ-CON-01..13). Stack e contrato: ADR-001. Correções: ADR-003 (aceito), ADR-004 e ADR-005 (propostos).
+> Implementa `requirements.md` (REQ-CON-01..13). Stack e contrato: ADR-001. Correções: ADR-003, ADR-004 e ADR-005 (aceitos).
 > Contrato HTTP a preservar: `.specs/legado/modulos/contas/contrato.md`.
 
 ## 1. Visão geral
@@ -10,11 +10,11 @@ Status: rascunho — aguardando aprovação do Francisco
 ```text
 docker compose
 ├── legacy-app :8081 ── legacy-db  (MySQL 5.7)   ← oráculo
-└── api        :3000 ── api-db     (PostgreSQL 16) ← sistema novo
+└── api        :3300 ── api-db     (PostgreSQL 16) ← sistema novo (porta 3000 dentro do container)
                  ▲
                  └── tools/migrar-dados.mjs (ETL MySQL → Postgres, mesmos ids)
 
-node tools/paridade.mjs --base http://localhost:3000 --alvo novo   ← critério de aceite
+node tools/paridade.mjs --base http://localhost:3300 --alvo novo   ← critério de aceite
 ```
 
 Os dois bancos partem **dos mesmos dados** (o ETL copia o banco do oráculo), então os mesmos casos de paridade
@@ -198,3 +198,10 @@ Controles que **não podem se perder** (revisão #3, #4; RN-AUT-001..003):
 | Bypass do filtro de tenant por SQL cru ou operação não coberta | Lista fechada de operações + lint de raw + e2e A × B (§4) |
 
 > Revisão de segurança das specs: `docs/revisoes/2026-09-25-security-contas.md` (12 achados, todos incorporados).
+
+## Mudanças após a aprovação
+
+| Data | Mudança | Motivo |
+|---|---|---|
+| 25/09/2026 | API exposta no host em **:3300** (continua :3000 dentro do container) | A porta 3000 do host já estava em uso por outro processo local (T01) |
+| 25/09/2026 | NestJS **11.2.6** e Prisma **6.19.3** (não 12 / 7-8) | Nest 12 é recente e muda a base de módulos; o `latest` do Prisma é um RC da v8 — preferidas as últimas estáveis conhecidas |

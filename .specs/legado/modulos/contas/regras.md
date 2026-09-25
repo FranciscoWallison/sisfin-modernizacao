@@ -71,8 +71,9 @@
 - **Confiança:** alta
 - **Suspeita de bug?** **sim**
 
-### RN-CON-011 — Valores monetários são `float`
-- **Regra:** `value` de contas, `balance` de contas bancárias e `value`/`balance` do extrato são colunas `FLOAT`.
+### RN-CON-011 — Valores monetários são `DOUBLE(8,2)` (ponto flutuante, teto de 999.999,99)
+- **Regra:** `value` de contas, `balance` de contas bancárias e `value`/`balance` do extrato são `DOUBLE(8,2)` no MySQL (o `float()` do Laravel 5.3 gera `double(8,2)`): ponto flutuante binário exibido com 2 casas e **teto de 999.999,99**.
+- **Correção (25/09):** a primeira versão desta regra dizia `FLOAT`; o `information_schema` do oráculo mostrou `double(8,2)` ao modelar o schema novo (T03).
 - **Paridade:** n/a — tipo de coluna; coberto por teste de schema (T03)
 - **Evidência:** `legacy/database/migrations/2017_09_13_014016_create_bill_pays_table.php:20`, `2017_09_16_182802_create_bill_receives_table.php:20`, `2017_09_16_180047_add_balance_to_bank_accounts.php:18`, `2017_09_16_155447_create_statements_table.php:18-19`
 - **Confiança:** alta

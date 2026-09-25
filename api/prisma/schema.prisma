@@ -1,0 +1,183 @@
+// Schema do SisFin reescrito (T03). Nomes de tabela e coluna IGUAIS ao legado (@@map/@map)
+// para que o ETL (tools/migrar-dados.mjs) seja cópia direta. Decisões: design.md §3, ADR-003.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  email     String    @db.VarChar(255)
+  code      String?   @db.VarChar(255)
+  createdAt DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
+
+  users             User[]
+  bankAccounts      BankAccount[]
+  categoryExpenses  CategoryExpense[]
+  categoryRevenues  CategoryRevenue[]
+  billPays          BillPay[]
+  billReceives      BillReceive[]
+  statements        Statement[]
+
+  @@map("clients")
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  name          String    @db.VarChar(255)
+  email         String    @unique @db.VarChar(255)
+  password      String    @db.VarChar(255)
+  rememberToken String?   @map("remember_token") @db.VarChar(100)
+  role          String    @default("client") @db.VarChar(255)
+  clientId      Int?      @map("client_id")
+  createdAt     DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime? @map("updated_at") @db.Timestamp(0)
+
+  client     Client?     @relation(fields: [clientId], references: [id])
+  statements Statement[]
+
+  @@map("users")
+}
+
+model Bank {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  logo      String    @db.VarChar(255)
+  createdAt DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
+
+  bankAccounts BankAccount[]
+
+  @@map("banks")
+}
+
+model BankAccount {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  agency    String?   @db.VarChar(255)
+  account   String?   @db.VarChar(255)
+  default   Boolean   @default(false)
+  balance   Decimal   @default(0) @db.Decimal(12, 2) // legado: DOUBLE(8,2) — RN-CON-011
+  bankId    Int       @map("bank_id")
+  clientId  Int       @map("client_id")
+  createdAt DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
+
+  bank         Bank          @relation(fields: [bankId], references: [id])
+  client       Client        @relation(fields: [clientId], references: [id])
+  billPays     BillPay[]
+  billReceives BillReceive[]
+  statements   Statement[]
+
+  @@index([clientId])
+  @@map("bank_accounts")
+}
+
+// Árvore de categorias em nested set (kalnoy/nestedset no legado): _lft/_rgt preservados pelo ETL
+model CategoryExpense {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  lft       Int       @map("_lft")
+  rgt       Int       @map("_rgt")
+  parentId  Int?      @map("parent_id")
+  clientId  Int       @map("client_id")
+  createdAt DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
+
+  client   Client    @relation(fields: [clientId], references: [id])
+  billPays BillPay[]
+
+  @@index([clientId])
+  @@index([lft, rgt, parentId])
+  @@map("category_expenses")
+}
+
+model CategoryRevenue {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  lft       Int       @map("_lft")
+  rgt       Int       @map("_rgt")
+  parentId  Int?      @map("parent_id")
+  clientId  Int       @map("client_id")
+  createdAt DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
+
+  client       Client        @relation(fields: [clientId], references: [id])
+  billReceives BillReceive[]
+
+  @@index([clientId])
+  @@index([lft, rgt, parentId])
+  @@map("category_revenues")
+}
+
+model BillPay {
+  id            Int       @id @default(autoincrement())
+  dateDue       DateTime  @map("date_due") @db.Date
+  name          String    @db.VarChar(255)
+  value         Decimal   @db.Decimal(12, 2) // legado: DOUBLE(8,2) — RN-CON-011
+  done          Boolean   @default(false) // legado: sem default (->defalt) — RN-CON-012 / REQ-CON-10
+  clientId      Int       @map("client_id")
+  categoryId    Int       @map("category_id") // FK para category_EXPENSES (revisão de segurança #6)
+  bankAccountId Int       @map("bank_account_id")
+  createdAt     DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime? @map("updated_at") @db.Timestamp(0)
+
+  client      Client          @relation(fields: [clientId], references: [id])
+  category    CategoryExpense @relation(fields: [categoryId], references: [id])
+  bankAccount BankAccount     @relation(fields: [bankAccountId], references: [id])
+
+  @@index([clientId, dateDue])
+  @@map("bill_pays")
+}
+
+model BillReceive {
+  id            Int       @id @default(autoincrement())
+  dateDue       DateTime  @map("date_due") @db.Date
+  name          String    @db.VarChar(255)
+  value         Decimal   @db.Decimal(12, 2)
+  done          Boolean   @default(false)
+  clientId      Int       @map("client_id")
+  categoryId    Int       @map("category_id") // FK para category_REVENUES
+  bankAccountId Int       @map("bank_account_id")
+  createdAt     DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime? @map("updated_at") @db.Timestamp(0)
+
+  client      Client          @relation(fields: [clientId], references: [id])
+  category    CategoryRevenue @relation(fields: [categoryId], references: [id])
+  bankAccount BankAccount     @relation(fields: [bankAccountId], references: [id])
+
+  @@index([clientId, dateDue])
+  @@map("bill_receives")
+}
+
+// Extrato. Polimórfico como no legado (statementable_type/id), sem FK para a conta de origem:
+// o histórico sobrevive à exclusão da conta (REQ-CON-09).
+model Statement {
+  id                Int       @id @default(autoincrement())
+  value             Decimal   @db.Decimal(12, 2)
+  balance           Decimal   @db.Decimal(12, 2)
+  bankAccountId     Int       @map("bank_account_id")
+  clientId          Int       @map("client_id")
+  statementableId   Int       @map("statementable_id")
+  statementableType String    @map("statementable_type") @db.VarChar(255) // "BillPay" | "BillReceive"
+  kind              String    @default("movimento") @db.VarChar(20) // movimento | estorno (REQ-CON-09)
+  userId            Int?      @map("user_id") // auditoria (REQ-CON-13); nulo nos registros migrados
+  action            String?   @db.VarChar(20) // criacao | pagamento | alteracao | estorno | exclusao
+  createdAt         DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt         DateTime? @map("updated_at") @db.Timestamp(0)
+
+  bankAccount BankAccount @relation(fields: [bankAccountId], references: [id])
+  client      Client      @relation(fields: [clientId], references: [id])
+  user        User?       @relation(fields: [userId], references: [id])
+
+  @@index([clientId, bankAccountId])
+  @@index([statementableType, statementableId])
+  @@map("statements")
+}

@@ -116,6 +116,32 @@ responder as dúvidas que restavam e deixar a rastreabilidade sem nenhuma pendê
 **Próximo passo:** Francisco revisa `design.md`, `tasks.md`, ADR-004 e ADR-005 (e o adendo REQ-CON-11..13) e aprova o
 plano com `node tools/aprovar-tasks.mjs contas "Francisco"`. Depois, Fase A (T01–T08).
 
+## Etapa 7 — Plano aprovado; Fase A: T01 e T03 · 25/09/2026
+
+**Objetivo:** começar a implementação pela fundação (API no ar e schema).
+
+- **Aprovação:** `node tools/aprovar-tasks.mjs contas "Francisco"` → hash `d854ed6545ef`. Junto: design, ADR-004,
+  ADR-005 e o adendo REQ-CON-11..13 marcados como aceitos.
+- **Consequência do gate por hash:** marcar `[x]` no `tasks.md` mudaria o hash e derrubaria a aprovação.
+  O andamento fica em `.specs/novo/contas/progresso.md`.
+- **Versões:** NestJS **11.2.6** (a 12 é recente e muda a base de módulos) e Prisma **6.19.3** (o `latest` do Prisma é
+  um RC da v8). Registrado em "Mudanças após a aprovação" no `design.md`.
+- **T01 — esqueleto:** `api/` com Nest + TypeScript strict, `/health`, Dockerfile multi-stage que aplica as migrations
+  no boot; serviços `api` e `api-db` (Postgres 16) no compose.
+  Tropeço: o host devolveu **404** em `localhost:3000` com o container saudável — havia outro processo `node`
+  local ouvindo em `::1:3000`. Não mexi nele; a API foi para a porta **3300** do host.
+  Aceite: `curl localhost:3300/health` → `{"status":"ok"}` **200** + teste e2e.
+- **T03 — schema:** `prisma/schema.prisma` com os nomes do legado (`@@map`), `DECIMAL(12,2)`, `done` default false,
+  `statements.client_id` + `kind`/`user_id`/`action`, FK de categoria por tipo. Migration `inicial` aplicada.
+  Aceite: `test/schema.spec.ts` — 10 testes sobre o SQL gerado.
+  **Descoberta:** ao ler o `information_schema` do oráculo, o dinheiro é `DOUBLE(8,2)`, não `FLOAT` — ponto flutuante
+  com teto escondido de **999.999,99**. RN-CON-011 corrigida (com nota da correção).
+- **Nota de harness:** esta sessão do agente roda a partir do repositório de estudos, então os hooks do
+  `.claude/settings.json` do sisfin **não disparam para mim**; rodo os sensores (`tsc`, testes, rastreabilidade) manualmente
+  a cada task. Numa sessão aberta dentro do sisfin, eles disparam sozinhos.
+
+**Próximo passo:** T02 (sensores de arquitetura) e T04 (ETL).
+
 ---
 
 ## Lições até aqui

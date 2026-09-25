@@ -56,7 +56,7 @@ amarrada a hash, observabilidade de SQL do oráculo, CI. Mapa completo e anális
 ```bash
 node tools/paridade.mjs                                   # compara com o esperado (legado em :8081)
 node tools/paridade.mjs --capturar RN-CON-009             # regrava o esperado de um caso a partir do legado
-node tools/paridade.mjs --base http://localhost:3000 --alvo novo  # contra o sistema novo, com as divergências aprovadas
+node tools/paridade.mjs --base http://localhost:3300 --alvo novo  # contra o sistema novo, com as divergências aprovadas
 ```
 
 Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios dados, guardam variáveis
@@ -67,7 +67,7 @@ Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios 
 
 | Módulo | AS-IS | Paridade | TO-BE | Implementado |
 |---|---|---|---|---|
-| contas | ✅ 19 regras, 9 dúvidas (todas respondidas), contrato | ✅ 8 casos + 4 regras n/a cobertas por tasks | 🟡 REQ-01..10 aprovados (ADR-003) · adendo REQ-11..13, design (revisado por segurança) e tasks aguardando aprovação | ⚪ |
+| contas | ✅ 19 regras, 9 dúvidas (todas respondidas), contrato | ✅ 8 casos + 4 regras n/a cobertas por tasks | ✅ requirements, design e tasks aprovados (hash `d854ed6545ef`) | 🟡 Fase A em andamento — ver [progresso](.specs/novo/contas/progresso.md) |
 | auth | 🟡 3 regras (controles de segurança) | ✅ 1 caso | 🟡 no REQ-CON-13 / ADR-005 | ⚪ |
 | categorias · contas-bancarias · bancos · fluxo-de-caixa · assinaturas | ⚪ | ⚪ | ⚪ | ⚪ |
 
@@ -81,7 +81,7 @@ O passo a passo completo, com descobertas e lições, está no [diário de bordo
 - **RN-CON-007** — o SQL observado mostra conta e extrato gravados fora da transação do saldo.
 - **RN-CON-013** — conta sem categoria/conta bancária devolve 500 (erro de banco) em vez de 422.
 - **RN-CON-015** — valor negativo é aceito; pagar uma conta a pagar negativa credita o saldo.
-- **RN-CON-011** — dinheiro armazenado em `FLOAT`.
+- **RN-CON-011** — dinheiro em `DOUBLE(8,2)`: ponto flutuante e teto escondido de 999.999,99.
 - **RN-CON-012** — `->defalt(false)` numa migration: erro de digitação que o Laravel 5.3 aceitou em silêncio.
 - **RN-CON-016** — sem busca, a lista de contas vem vazia: `""` vira `value = 0` — e isso depende da versão do ICU.
 - **RN-CON-018** — os totais ignoram a busca por texto e erram a precedência `or … and done`.

@@ -3,7 +3,7 @@
 //
 //   node tools/paridade.mjs                       # compara com "esperado" (legado em :8081)
 //   node tools/paridade.mjs --capturar            # grava o resultado atual em "esperado"
-//   node tools/paridade.mjs --base http://localhost:3000 --alvo novo contas/RN-CON-003
+//   node tools/paridade.mjs --base http://localhost:3300 --alvo novo contas/RN-CON-003
 //
 // --alvo novo aplica sobre o "esperado" as divergências aprovadas em "divergencias" (cada uma cita um ADR):
 //   "divergencias": { "adr": "ADR-003", "esperado": { "delta_excluir": 10 } }

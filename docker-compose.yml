@@ -1,4 +1,4 @@
-# Sobe o ORÁCULO (sistema legado). O TO-BE (api/ e web/) entra aqui depois, lado a lado.
+# ORÁCULO (legacy-*) e sistema novo (api-*) lado a lado. Paridade: tools/paridade.mjs --base :8081 | :3000
 services:
   legacy-db:
     image: mysql:5.7
@@ -48,5 +48,33 @@ services:
       BANK_LOGO_DEFAULT: default.jpg
       API_URL: http://localhost:8081/api
 
+  api-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: sisfin
+      POSTGRES_USER: sisfin
+      POSTGRES_PASSWORD: sisfin
+    ports: ["54321:5432"]
+    volumes: [api-db:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sisfin -d sisfin"]
+      interval: 3s
+      retries: 20
+
+  api:
+    build: ./api
+    depends_on:
+      api-db:
+        condition: service_healthy
+    ports: ["3300:3000"]
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: postgresql://sisfin:sisfin@api-db:5432/sisfin
+      # Só desenvolvimento local. Diferente do segredo do legado (ADR-005): tokens não são intercambiáveis
+      JWT_SECRET: sisfin-api-segredo-local-de-desenvolvimento-nao-usar-em-producao
+      CORS_ORIGINS: http://localhost:8081
+
 volumes:
   legacy-db:
+  api-db:

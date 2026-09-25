@@ -1,9 +1,9 @@
-Status: REQ-CON-01..10 aprovados por Francisco em 25/09/2026 · adendo REQ-CON-11..13 aguardando aprovação
+Status: aprovado — REQ-CON-01..10 em 25/09/2026; adendo REQ-CON-11..13 em 25/09/2026 (com o plano, hash d854ed6545ef)
 
 # Requirements — módulo `contas` (TO-BE)
 
 > Gerado a partir de `.specs/legado/modulos/contas/regras.md` (RN-CON-001..015) e `duvidas.md`.
-> Decisões que dependiam de dúvidas foram aprovadas em 25/09/2026 — ver ADR-003. O adendo REQ-CON-11..12 segue o ADR-004 e o REQ-CON-13 segue o ADR-005, ambos propostos.
+> Decisões que dependiam de dúvidas foram aprovadas em 25/09/2026 — ver ADR-003. O adendo REQ-CON-11..12 segue o ADR-004 e o REQ-CON-13 segue o ADR-005, ambos aceitos.
 > Contrato: **mesmas rotas e formatos do legado** (`/api/bill_pays`, `/api/bill_receives`), salvo onde indicado — ADR-001.
 > Aceite: casos em `.specs/paridade/contas/`. Onde a decisão é *corrigir*, o caso ganha um bloco `divergencias`
 > com o resultado esperado no sistema novo e a referência ao ADR.
@@ -103,7 +103,7 @@ Aceite: migração de schema revisada no `design.md`.
 
 ---
 
-### REQ-CON-11 — Listagem e busca *(adendo — aguardando aprovação)*
+### REQ-CON-11 — Listagem e busca *(adendo aprovado)*
 Origem: RN-CON-016, RN-CON-017 · Decisão: **corrigir** (016) + **manter** (017) — ADR-004
 
 - QUANDO `search` estiver ausente ou vazio, O SISTEMA DEVE listar todas as contas do cliente (paginadas, 15 por página, `orderBy`/`sortedBy`). *(legado no oráculo: filtra `value = 0` e lista vazio)*
@@ -113,7 +113,7 @@ Origem: RN-CON-016, RN-CON-017 · Decisão: **corrigir** (016) + **manter** (017
 
 Aceite: `RN-CON-016-a-018-listagem-e-totais.json` → `lista_sem_busca_vazia: false` (divergência ADR-004).
 
-### REQ-CON-12 — Totais coerentes com a lista *(adendo — aguardando aprovação)*
+### REQ-CON-12 — Totais coerentes com a lista *(adendo aprovado)*
 Origem: RN-CON-018 · Decisão: **corrigir** — ADR-004
 
 - `bill_data.total_paid`, `total_to_pay` e `total_expired` DEVEM ser calculados sobre **o mesmo filtro da lista** (incluindo a busca por texto), com precedência correta entre o filtro e `done`.
@@ -121,7 +121,7 @@ Origem: RN-CON-018 · Decisão: **corrigir** — ADR-004
 
 Aceite: `RN-CON-016-a-018-listagem-e-totais.json` → `totais_consistentes_com_a_lista: true` (divergência ADR-004).
 
-### REQ-CON-13 — Segurança transversal *(adendo — aguardando aprovação)*
+### REQ-CON-13 — Segurança transversal *(adendo aprovado)*
 Origem: RN-AUT-001, RN-AUT-002, RN-AUT-003, RN-CON-019 · Decisão: **manter** os controles do legado + **corrigir** lacunas — ADR-005
 Motivo: revisão de segurança `docs/revisoes/2026-09-25-security-contas.md`.
 

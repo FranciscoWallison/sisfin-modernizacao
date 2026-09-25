@@ -4,3 +4,5 @@ docker/legacy/.env.local
 
 # Relatórios do ETL com dados reais (só o do seed fictício vai para docs/relatorios/)
 .relatorios/
+api/dist/
+api/coverage/

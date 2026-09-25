@@ -142,6 +142,23 @@ plano com `node tools/aprovar-tasks.mjs contas "Francisco"`. Depois, Fase A (T01
 
 **Próximo passo:** T02 (sensores de arquitetura) e T04 (ETL).
 
+## Etapa 8 — T02: sensores de arquitetura · 25/09/2026
+
+**Objetivo:** tornar as regras de camadas do design verificáveis por máquina, com mensagens que ensinem o agente.
+
+- `api/.dependency-cruiser.cjs`: `dominio-puro`, `http-so-fala-com-application`, `prisma-so-em-infra`, `sem-ciclos`.
+  Cada regra tem um `comment` que diz **o que fazer** (ex.: "Crie/use um repositório em infra/"); a saída `err-long`
+  o mostra — a saída padrão `err` não mostrava, e o teste pegou isso.
+- Lint de SQL cru (`test/arquitetura.spec.ts`): `$queryRaw`/`$executeRaw` só em `*/infra/**` com `clientId: number`;
+  variantes `*Unsafe` proibidas (revisão de segurança #2).
+- Aceite: fixture com `domain/` importando o Prisma falha com as duas regras **e** a mensagem de correção.
+- Hook pós-edição passou a rodar `tsc` + `depcruise` em `api/`: ~4 s por edição.
+- **Bug no sensor dormente:** o typecheck do hook foi escrito antes de `api/` existir e rodava `npx tsc` a partir da raiz,
+  onde o TypeScript não está instalado — o `npx` baixava um pacote chamado "tsc" que **não é o compilador** e todo
+  arquivo "falhava". Só apareceu ao ativar. Corrigido (`cwd` no projeto + `--no-install`). Lição: sensor que nunca rodou
+  não está testado.
+- CI: novo job `api` (typecheck, camadas, jest).
+
 ---
 
 ## Lições até aqui
@@ -154,3 +171,4 @@ plano com `node tools/aprovar-tasks.mjs contas "Francisco"`. Depois, Fase A (T01
    quase ficaram "para depois". Controles de segurança do legado são regras (`RN-AUT-*`), não detalhe de implementação.
 6. **Sensor inferencial + conferência humana.** O revisor LLM achou problemas que nenhum sensor computacional pegaria
    (corrida, bypass de tenant); cada afirmação dele sobre o legado foi conferida antes de virar requisito.
+7. **Sensor que nunca rodou não está testado.** O typecheck do hook, escrito antes de existir código, estava quebrado.

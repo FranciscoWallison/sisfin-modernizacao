@@ -7,6 +7,29 @@ on:
     branches: [main]
 
 jobs:
+  api:
+    # Sensores do sistema novo (T02): tipos, camadas e testes unitários/estruturais
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npx prisma generate
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Regras de camadas (dependency-cruiser)
+        run: npm run arquitetura
+      - name: Testes
+        run: npx jest
+
   harness:
     runs-on: ubuntu-latest
     timeout-minutes: 20

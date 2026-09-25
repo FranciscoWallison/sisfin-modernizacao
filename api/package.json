@@ -9,7 +9,7 @@
     "dev": "tsc -p tsconfig.build.json && node dist/main.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "jest",
-    "arquitetura": "depcruise src --config .dependency-cruiser.cjs",
+    "arquitetura": "depcruise src --config .dependency-cruiser.cjs --output-type err-long",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy"
   },

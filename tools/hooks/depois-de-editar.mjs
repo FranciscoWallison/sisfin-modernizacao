@@ -39,9 +39,28 @@ if (/^\.specs\/legado\/modulos\/[^/]+\/regras\.md$/.test(rel)) {
 const projeto = rel.match(/^(api|web)\/.+\.(ts|vue)$/)?.[1];
 if (projeto && existsSync(join(raiz, projeto, 'tsconfig.json'))) {
   try {
-    execFileSync('npx', ['tsc', '--noEmit', '-p', join(raiz, projeto)], { stdio: 'pipe', shell: true, timeout: 90_000 });
+    // cwd no projeto: da raiz, o npx não acha o typescript local e baixa um pacote "tsc" que não é o compilador
+    execFileSync('npx', ['--no-install', 'tsc', '--noEmit', '-p', 'tsconfig.json'], {
+      cwd: join(raiz, projeto),
+      stdio: 'pipe',
+      shell: true,
+      timeout: 90_000,
+    });
   } catch (e) {
     problemas.push(`typecheck de ${projeto}/ falhou:\n${String(e.stdout).slice(0, 2000)}`);
+  }
+  // Regras de camadas (T02): a saída err-long traz a mensagem de "o que fazer" de cada regra
+  if (existsSync(join(raiz, projeto, '.dependency-cruiser.cjs'))) {
+    try {
+      execFileSync('npx', ['depcruise', 'src', '--config', '.dependency-cruiser.cjs', '--output-type', 'err-long'], {
+        cwd: join(raiz, projeto),
+        stdio: 'pipe',
+        shell: true,
+        timeout: 90_000,
+      });
+    } catch (e) {
+      problemas.push(`regras de arquitetura de ${projeto}/ violadas:\n${String(e.stdout).slice(0, 2000)}`);
+    }
   }
 }
 

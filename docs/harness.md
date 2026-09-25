@@ -25,9 +25,9 @@ não depende de alguém escrever os testes certos: ele compara com a realidade (
 | Observabilidade do oráculo | sensor computacional | comportamento | `tools/oraculo-sql.mjs` | ✅ |
 | Rastreabilidade | sensor computacional | comportamento | `tools/rastreabilidade.mjs` | ✅ |
 | Validação de specs ao editar | sensor computacional | manutenibilidade | hook `depois-de-editar` | ✅ |
-| Typecheck ao editar | sensor computacional | manutenibilidade | hook `depois-de-editar` | 🟡 dormente até existir `api/` |
+| Typecheck ao editar | sensor computacional | manutenibilidade | hook `depois-de-editar` | ✅ ~4 s por edição em `api/` |
 | CI | sensor computacional | todas | `.github/workflows/harness.yml` | 🟡 escrito, 1ª execução no próximo push |
-| Regras de camadas | sensor computacional | arquitetura | `dependency-cruiser` em `api/` | ⏳ junto com o `design.md` |
+| Regras de camadas | sensor computacional | arquitetura | `api/.dependency-cruiser.cjs` (hook + CI) + lint de SQL cru | ✅ mensagens dizem o que fazer |
 | Isolamento de tenant | sensor computacional | arquitetura | teste estrutural em `api/` | ⏳ junto com o `design.md` |
 | Revisão de segurança | sensor inferencial | arquitetura | subagente `security-reviewer` | ✅ 1ª execução: 12 achados nas specs de `contas` (`docs/revisoes/`) |
 | *Garbage collection* | sensor recorrente | manutenibilidade | agente agendado (rastreabilidade + drift spec × código) | ⏳ quando houver código |

@@ -1,0 +1,82 @@
+{
+  "rn": [
+    "RN-EXT-005"
+  ],
+  "descricao": "Ordenação pelos cabeçalhos da tela (StatementList.vue): valor e saldo funcionam; Data (orderBy=date) e Conta (join bank_accounts:bank_account_id|bank_accounts.name) dão 500 no legado — date não é coluna, e o join quebra a consulta dos totais (COUNT(id) ambíguo). Coluna inexistente → 500.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "por_valor_desc",
+      "rota": "/api/statements?orderBy=value&sortedBy=desc",
+      "salvar": {
+        "v": "data.statements.data"
+      }
+    },
+    {
+      "nome": "por_saldo_asc",
+      "rota": "/api/statements?orderBy=balance&sortedBy=asc",
+      "salvar": {
+        "s": "data.statements.data"
+      }
+    },
+    {
+      "nome": "por_data",
+      "rota": "/api/statements?page=1&orderBy=date&sortedBy=asc&include=bankAccount"
+    },
+    {
+      "nome": "por_conta",
+      "rota": "/api/statements?page=1&orderBy=bank_accounts%3Abank_account_id%7Cbank_accounts.name&sortedBy=asc&include=bankAccount"
+    },
+    {
+      "nome": "coluna_inexistente",
+      "rota": "/api/statements?orderBy=nao_existe"
+    }
+  ],
+  "derivar": {
+    "valor_em_ordem_decrescente": "v.every((x, i) => i === 0 || v[i - 1].value >= x.value)",
+    "saldo_em_ordem_crescente": "s.every((x, i) => i === 0 || s[i - 1].balance <= x.balance)"
+  },
+  "esperado": {
+    "por_valor_desc": {
+      "status": 200
+    },
+    "por_saldo_asc": {
+      "status": 200
+    },
+    "por_data": {
+      "status": 500
+    },
+    "por_conta": {
+      "status": 500
+    },
+    "coluna_inexistente": {
+      "status": 500
+    },
+    "valor_em_ordem_decrescente": true,
+    "saldo_em_ordem_crescente": true
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  },
+  "divergencias": {
+    "adr": "ADR-008",
+    "motivo": "REQ-EXT-05: ordenar por Data e por Conta funciona (500 no legado); coluna fora da allowlist → 422 (500 no legado).",
+    "esperado": {
+      "por_data": {
+        "status": 200
+      },
+      "por_conta": {
+        "status": 200
+      },
+      "coluna_inexistente": {
+        "status": 422
+      }
+    }
+  }
+}

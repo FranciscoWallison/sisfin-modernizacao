@@ -92,6 +92,7 @@ Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios 
 | fluxo-de-caixa | ✅ 8 regras, 5 dúvidas, contrato | ✅ 3 casos | ✅ aprovado (ADR-006) | ✅ **migrado** — paridade 3/3; tela e gráfico funcionando; DUV-FLX-005 pendente |
 | categorias (escrita) | ✅ 11 regras, 7 dúvidas, contrato | ✅ 6 casos | ✅ aprovado (ADR-007, hash `baf1b8d63868`) | ✅ **migrado** — paridade 6/6; tela funcionando; revisado por segurança; DUV-CAT-004 e 007 pendentes — ver [progresso](.specs/novo/categorias/progresso.md) |
 | contas-bancarias (escrita + bancos) | ✅ 9 regras, 5 dúvidas, contrato | ✅ 4 casos | ✅ aprovado (ADR-007, hash `547b3519e39d`) | ✅ **migrado** — paridade 4/4; espelho 20/20; telas de criar e editar funcionando — ver [progresso](.specs/novo/contas-bancarias/progresso.md) |
+| extrato | ✅ 7 regras, 3 dúvidas, contrato | ✅ 2 casos | 🟡 rascunho — aguardando aprovação (ADR-008) | 🟡 leitura já no compat |
 | assinaturas | ⚪ | ⚪ | ⚪ | ⚪ |
 
 O passo a passo completo, com descobertas e lições, está no [diário de bordo](docs/diario-de-bordo.md).

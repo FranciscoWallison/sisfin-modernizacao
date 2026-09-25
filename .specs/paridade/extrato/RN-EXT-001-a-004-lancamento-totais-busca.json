@@ -1,0 +1,184 @@
+{
+  "rn": [
+    "RN-EXT-001",
+    "RN-EXT-002",
+    "RN-EXT-003",
+    "RN-EXT-004",
+    "RN-EXT-006"
+  ],
+  "descricao": "Conta a receber PAGA gera um lançamento: ele aparece no extrato (data = dia do lançamento), e os totais (de TODOS os lançamentos do cliente, não da página) mudam pelo valor. A busca (período que a tela envia) e o ?limit são ignorados. O outro cliente não vê nada.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    },
+    "outro_cliente": {
+      "email": "cliente3@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "antes",
+      "rota": "/api/statements",
+      "salvar": {
+        "antes": "data.statement_data",
+        "total_antes": "data.statements.meta.pagination.total"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "b_antes",
+      "usuario": "outro_cliente",
+      "rota": "/api/statements",
+      "salvar": {
+        "b_antes": "data.statement_data"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "conta_bancaria",
+      "rota": "/api/bank_accounts",
+      "salvar": {
+        "cb": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "categoria",
+      "rota": "/api/category_revenues",
+      "salvar": {
+        "cat": "data.0.id"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "recebida",
+      "metodo": "POST",
+      "rota": "/api/bill_receives",
+      "corpo": {
+        "name": "PAR-EXT1-{{execucao}}",
+        "date_due": "2018-09-10",
+        "value": 12.34,
+        "done": true,
+        "category_id": "{{cat}}",
+        "bank_account_id": "{{cb}}"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "depois",
+      "rota": "/api/statements",
+      "caminho": "data.statements.meta.pagination",
+      "campos": [
+        "per_page"
+      ],
+      "salvar": {
+        "depois": "data.statement_data",
+        "total_depois": "data.statements.meta.pagination.total"
+      }
+    },
+    {
+      "nome": "mais_recente",
+      "rota": "/api/statements?orderBy=id&sortedBy=desc&include=bankAccount",
+      "caminho": "data.statements.data.0",
+      "campos": [
+        "value"
+      ],
+      "salvar": {
+        "recente": "data.statements.data.0"
+      }
+    },
+    {
+      "nome": "com_periodo_de_2000",
+      "rota": "/api/statements?search=01%2F01%2F2000%20-%2002%2F01%2F2000",
+      "salvar": {
+        "total_busca": "data.statements.meta.pagination.total",
+        "dados_busca": "data.statement_data"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "com_periodo_amplo",
+      "rota": "/api/statements?search=01%2F01%2F2000%20-%2031%2F12%2F2099",
+      "salvar": {
+        "total_amplo": "data.statements.meta.pagination.total",
+        "dados_amplo": "data.statement_data"
+      },
+      "registrar": false
+    },
+    {
+      "nome": "limit_5",
+      "rota": "/api/statements?limit=5",
+      "caminho": "data.statements.meta.pagination",
+      "campos": [
+        "per_page"
+      ]
+    },
+    {
+      "nome": "b_depois",
+      "usuario": "outro_cliente",
+      "rota": "/api/statements",
+      "salvar": {
+        "b_depois": "data.statement_data"
+      },
+      "registrar": false
+    }
+  ],
+  "derivar": {
+    "delta_total_de_lancamentos": "total_depois - total_antes",
+    "delta_count": "depois.count - antes.count",
+    "delta_receitas": "Math.round((depois.revenues.total - antes.revenues.total) * 100) / 100",
+    "delta_despesas": "Math.round((depois.expenses.total - antes.expenses.total) * 100) / 100",
+    "data_do_lancamento_e_hoje_nao_o_vencimento": "recente.date === hoje",
+    "campos_do_lancamento": "Object.keys(recente).join(',')",
+    "conta_bancaria_incluida": "recente.bankAccount.data.id === cb",
+    "busca_por_periodo_ignorada": "total_busca === total_depois && JSON.stringify(dados_busca) === JSON.stringify(depois)",
+    "outro_cliente_intocado": "JSON.stringify(b_antes) === JSON.stringify(b_depois)",
+    "periodo_sem_lancamentos_zera_lista_e_totais": "total_busca === 0 && dados_busca.count === 0 && dados_busca.revenues.total === 0",
+    "periodo_amplo_mantem_tudo": "total_amplo === total_depois && JSON.stringify(dados_amplo) === JSON.stringify(depois)"
+  },
+  "esperado": {
+    "depois": {
+      "status": 200,
+      "corpo": {
+        "per_page": 15
+      }
+    },
+    "mais_recente": {
+      "status": 200,
+      "corpo": {
+        "value": 12.34
+      }
+    },
+    "limit_5": {
+      "status": 200,
+      "corpo": {
+        "per_page": 15
+      }
+    },
+    "delta_total_de_lancamentos": 1,
+    "delta_count": 1,
+    "delta_receitas": 12.34,
+    "delta_despesas": 0,
+    "data_do_lancamento_e_hoje_nao_o_vencimento": true,
+    "campos_do_lancamento": "id,date,value,balance,bank_account_id,bankAccount",
+    "conta_bancaria_incluida": true,
+    "busca_por_periodo_ignorada": true,
+    "outro_cliente_intocado": true,
+    "periodo_sem_lancamentos_zera_lista_e_totais": false,
+    "periodo_amplo_mantem_tudo": true
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  },
+  "divergencias": {
+    "adr": "ADR-008",
+    "motivo": "REQ-EXT-03: o período que a tela envia filtra lista e totais pela data do lançamento (o legado ignora a busca).",
+    "esperado": {
+      "busca_por_periodo_ignorada": false,
+      "periodo_sem_lancamentos_zera_lista_e_totais": true
+    }
+  }
+}

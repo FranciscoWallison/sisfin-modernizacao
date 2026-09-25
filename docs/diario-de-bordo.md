@@ -809,6 +809,35 @@ salvam na versão nova (plano de contas, criar/editar conta bancária).
 **Pendências:** DUV-CAT-004 (órfãs no cutover), DUV-CAT-007 (limite de profundidade), DUV-FLX-005; links de paginação
 pela config (S10); o 1º CI real no push.
 
+## Etapa 20 — Módulo `extrato`: levantamento e proposta · 25/09/2026
+
+**Objetivo:** Francisco perguntou o que ainda falta migrar.
+
+- **Inventário das rotas:**
+  - toda a API usada pelo SPA já responde no sistema novo;
+  - sobram o site em Blade (cadastro, login de sessão, convite), o admin de bancos, as assinaturas (Iugu) com o
+    webhook, e uma rota pública de teste que dispara e-mail.
+- **Ordem recomendada e escolhida:** extrato → cadastro/login → admin de bancos → assinaturas.
+- **Arqueologia do extrato** (código, `StatementList.vue`, sondas lado a lado legado × novo logo após o ETL, `laravel.log`):
+  - **A tela promete o mês e mostra tudo.** O campo de busca abre com `01/MM/AAAA - 30/MM/AAAA`, mas o repositório
+    não declara campos pesquisáveis: lista e totais trazem todos os lançamentos (RN-EXT-003).
+  - **Metade dos cabeçalhos quebra.** Data → 500 (`date` não é coluna). Conta → 500, e o motivo não é o join: ele
+    funciona na lista, mas o mesmo critério entra na consulta dos totais e o `COUNT(id)` fica ambíguo (RN-EXT-005).
+  - **`?limit` é ignorado** no extrato (15 fixo). O compat do novo o respeitava: uma divergência que ninguém tinha
+    visto, porque o SPA não manda `limit` nessa tela.
+  - O resto do compat (T08) já era fiel: campos, data = dia do lançamento, totais do conjunto e isolamento.
+- **Paridade:** 2 casos (lançamento, totais, busca e limit; ordenação), estáveis no legado. Contra o novo atual falham
+  só no `limit` e nos 3 status de ordenação.
+- **TO-BE em rascunho:**
+  - REQ-EXT-01..06;
+  - **ADR-008 (proposto)**: o período filtra lista e totais; Data e Conta passam a ordenar;
+  - design: módulo próprio, `interpretarBusca` para `shared/`;
+  - tasks E01–E05.
+- **Um cuidado para o espelho:** a URL real da tela tem um período **fixo** (`01/09/2026 - 30/09/2026`). Com a
+  correção ela diverge por decisão, e já dependia da data de hoje. Sai do espelho na E04.
+
+**Próximo passo:** Francisco decide as DUV-EXT-001 e 002 (ADR-008) e aprova com `node tools/aprovar-tasks.mjs extrato "Francisco"`.
+
 ---
 
 ## Lições até aqui

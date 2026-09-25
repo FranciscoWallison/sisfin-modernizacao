@@ -23,7 +23,8 @@
 | extrato | `Api\StatementsController` | `.specs/legado/modulos/extrato/` | ✅ migrado (`api/src/modules/extrato`) |
 | fluxo-de-caixa | `Api\CashFlowsController` | `.specs/legado/modulos/fluxo-de-caixa/` | ✅ migrado (`api/src/modules/fluxo-de-caixa`) |
 | assinaturas | `Site\SubscriptionsController`, `Api\IuguController`, `app/Iugu/*` | — | ⚪ |
-| auth | `Api\AuthController`, `Auth\*`, `Site\Auth\*`, `app/Jwt` | — | ⚪ |
+| auth | `Api\AuthController`, `Auth\*`, `app/Jwt` | RN-AUT-* (em `contas`) | ✅ API de login/refresh/logout migrada (auth-compat, ADR-005) |
+| site (cadastro, login, convite) | `Site\Auth\*`, `Site\SubscriptionsController@invite*`, middleware `auth.from_token` | `.specs/legado/modulos/site/` | 🟡 AS-IS + TO-BE proposto (ADR-009) |
 
 ## Achados de outros módulos (para quando forem migrados)
 

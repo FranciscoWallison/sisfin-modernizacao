@@ -1,0 +1,10 @@
+# Dúvidas — módulo `site` (cadastro, login e convite)
+
+| ID | Dúvida | Evidência | Proposta | Quem responde | Status |
+|---|---|---|---|---|---|
+| DUV-SIT-001 | O que fazer com o "convite", que nunca funcionou (todo POST dá 500) e, se funcionasse, criaria um cliente novo? | RN-SIT-006 | **Não migrar.** Migrar algo quebrado não preserva comportamento de ninguém. "Convidar alguém para o meu cliente" é funcionalidade **nova**: fica como proposta de produto fora da migração | Francisco | ⏳ decidir no gate (ADR-009) |
+| DUV-SIT-002 | Validar o formato de `client.email`? Hoje aceita "nao-e-email" | RN-SIT-002 | **Sim**, com a mesma regra e a mesma mensagem do `email` do usuário ("The client.email must be a valid email address.") | Francisco | ⏳ decidir no gate (ADR-009) |
+| DUV-SIT-003 | O SPA (que não editamos) continua abrindo `/my-financial?token=<JWT>`. Como tirar o token da URL? | RN-SIT-005 | Na tela nova, que tem a **mesma origem** do SPA, o token já está no `localStorage`: a página de `/my-financial` **ignora** o parâmetro, apaga-o da barra de endereço (`history.replaceState`), manda `Referrer-Policy: no-referrer` e o nginx não registra a query dessa rota. Nenhuma sessão é criada | Francisco | ⏳ decidir no gate (ADR-009) |
+| DUV-SIT-004 | Para onde ir depois do cadastro? O legado manda para `/subscriptions/create` (Iugu), ainda não migrado | RN-SIT-001, RN-SIT-003 | Para o **app** (`/app`), já logado. Equivale ao efeito real de hoje, em que a assinatura nunca é exigida (RN-SIT-003). Quando o módulo `assinaturas` vier, ele decide o fluxo | Francisco | ⏳ decidir no gate (ADR-009) |
+| DUV-SIT-005 | Cadastro atômico? | RN-SIT-001 (cliente gravado antes do usuário, sem transação) | **Sim:** cliente + usuário numa transação; e-mail único garantido também pelo banco (corrida entre dois cadastros com o mesmo e-mail → 422, não 500) | — | ✅ melhoria sem mudança de comportamento observável |
+| DUV-SIT-006 | Manter as mensagens de validação em inglês (Laravel)? | RN-SIT-002 | **Sim**, iguais às do legado (a tela nova as exibe como o Materialize exibia). Tradução é decisão de produto à parte | — | ✅ fiel ao legado |

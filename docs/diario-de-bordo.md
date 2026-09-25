@@ -866,6 +866,42 @@ pela config (S10); o 1º CI real no push.
 - **Marco: toda a API do legado está no sistema novo**, exceto o webhook da Iugu. O que sobra é o site em Blade
   (cadastro/login/convite), o admin de bancos e as assinaturas.
 
+## Etapa 22 — Módulo `site` (cadastro e login): levantamento e proposta · 25/09/2026
+
+**Objetivo:** migrar o site em Blade. Francisco escolheu **endpoints na API nova + telas novas**, em vez de reproduzir
+páginas no servidor. Como o SPA é compilado de `legacy/`, que não se edita, as telas do site são o **início do front
+Vue 3**.
+
+- **Sondas de um site com sessão e CSRF.** A paridade do harness é JSON, e aqui o contrato é HTML. Escrevi sondas que
+  agem como navegador: leem o formulário, guardam cookies e postam com o `_token`. Ficaram em `tools/sondas/`, para
+  serem reproduzíveis.
+  - **Tropeço:** o 1º cadastro "deu 500". Era a minha sonda, que não achava o `_token` (o `Form::open` põe
+    `type="hidden"` entre `name` e `value`). No Laravel 5.3, CSRF inválido vira 500, e não 419.
+  - As mensagens de erro não estão no texto da página: estão no atributo `data-error`, que o Materialize exibe via CSS.
+- **Achados:**
+  - **O "convite" nunca funcionou:** todo POST dá 500. `SubscriptionsController` usa `UserRegisterRequest` sem `use` e
+    nem recebe os repositórios. E, se funcionasse, criaria um cliente novo em vez de convidar para o cliente de quem
+    convida.
+  - **A assinatura nunca foi exigida:** o middleware `check-subscription` está registrado e não é aplicado a nenhuma
+    rota. Quem se cadastra usa a API inteira.
+  - **JWT na URL:** o menu do SPA abre `/my-financial?token=<JWT>`, e um middleware transforma esse token em sessão
+    web.
+  - O cadastro grava cliente e usuário **fora de transação**; `client.email` não é validado como e-mail.
+  - O login do site tem throttle de 5 tentativas / 60 s (bloqueia até a senha certa). O novo já tem lockout
+    equivalente na API (RN-AUT-*).
+- **Paridade:** "n/a" em todas as regras, porque o contrato muda de HTML para API (ADR-009). Cada regra aponta a task
+  que a cobre; o aceite é por integração com **as mesmas mensagens** capturadas pelas sondas, mais Playwright.
+- **TO-BE em rascunho:**
+  - REQ-SIT-01..07;
+  - **ADR-009 (proposto)**: `POST /api/register` atômico; login e logout pela API existente, sem sessão; telas Vue 3 na
+    mesma origem do SPA, com o token na chave que o SPA lê; convite não migrado; token fora da URL; depois do cadastro
+    → `/app`;
+  - design;
+  - tasks S01–S06.
+
+**Próximo passo:** Francisco decide as DUV-SIT-001..004 (ADR-009) e aprova com
+`node tools/aprovar-tasks.mjs site "Francisco"`.
+
 ---
 
 ## Lições até aqui

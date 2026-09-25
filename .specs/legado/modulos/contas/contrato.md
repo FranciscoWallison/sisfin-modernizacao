@@ -10,8 +10,10 @@
 | `POST /api/access_token` `{email, password}` | **200** `{"token": "<JWT HS256>"}` — TTL 60 min (`legacy/config/jwt.php:103`) |
 | credenciais erradas | **400** `{"message": "These credentials do not match our records."}` |
 | campos faltando | **422** `{"email": ["The email field is required."], "password": ["The password field is required."]}` |
-| rota protegida sem token | **401** |
-| `POST /api/refresh_token`, `POST /api/logout` | `{"token"}` / **204** (módulo `auth`) |
+| rota protegida sem token, com token inválido ou após logout | **401** `{"error": "Unauthenticated."}` |
+| `POST /api/logout` | **204**; o mesmo token depois → 401 (blacklist) |
+| `GET /api/user` | **200** `{"id", "name", "email", "created_at": "2026-09-25 03:16:12", "updated_at", "role", "client_id", "client": {"id", "name", "email", "code", "created_at", "updated_at"}}` — sem `password`/`remember_token` (datas em texto simples, não Carbon) |
+| `POST /api/refresh_token` | `{"token"}` (módulo `auth`) |
 
 Senhas: bcrypt do Laravel (`$2y$10$…`).
 

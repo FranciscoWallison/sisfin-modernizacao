@@ -29,7 +29,7 @@ não depende de alguém escrever os testes certos: ele compara com a realidade (
 | CI | sensor computacional | todas | `.github/workflows/harness.yml` | 🟡 escrito, 1ª execução no próximo push |
 | Regras de camadas | sensor computacional | arquitetura | `dependency-cruiser` em `api/` | ⏳ junto com o `design.md` |
 | Isolamento de tenant | sensor computacional | arquitetura | teste estrutural em `api/` | ⏳ junto com o `design.md` |
-| Revisão de segurança | sensor inferencial | arquitetura | subagente `security-reviewer` | ✅ definido; roda nas aprovações de spec |
+| Revisão de segurança | sensor inferencial | arquitetura | subagente `security-reviewer` | ✅ 1ª execução: 12 achados nas specs de `contas` (`docs/revisoes/`) |
 | *Garbage collection* | sensor recorrente | manutenibilidade | agente agendado (rastreabilidade + drift spec × código) | ⏳ quando houver código |
 
 ## Como usar
@@ -66,6 +66,7 @@ No Git Bash, prefixe `oraculo-sql.mjs` com `MSYS_NO_PATHCONV=1` (senão `/api/..
 - **Não é fronteira de segurança.** Os hooks interceptam `Edit/Write`; um comando `Bash` que escreve arquivo passa por fora. O gate definitivo é o CI + revisão humana do PR.
 - **Diagnóstico errado passa.** A premissa "o admin não tem cliente" (DUV-CON-006) estava errada e nenhum sensor pegaria — só a sonda no oráculo.
 - **O oráculo reproduz o código, não o ambiente original.** A versão do ICU (63.1 na imagem `php:7.1-apache`) muda o resultado da busca (RN-CON-016). Diferença que pode ser de ambiente vira dúvida, não regra.
+- **O oráculo tem rate limit (60/min, RN-AUT-002).** Rodar a suíte várias vezes seguidas gera 429; o executor espera o `Retry-After` e avisa no stderr — a suíte fica mais lenta, não falsa.
 - **Datas do seed são relativas ao dia do seed.** Os casos usam deltas e dados próprios; nunca valores absolutos do seed.
 - **O oráculo tem prazo de validade.** Antes de desligar o legado, os casos de paridade viram testes de regressão do sistema novo (o `esperado` já capturado continua valendo).
 - **Harness também é código**: cresce e precisa de manutenção. Os testes em `tools/testes/` existem por isso.

@@ -1,9 +1,9 @@
-Status: REQ-CON-01..10 aprovados por Francisco em 25/09/2026 · adendo REQ-CON-11..12 aguardando aprovação
+Status: REQ-CON-01..10 aprovados por Francisco em 25/09/2026 · adendo REQ-CON-11..13 aguardando aprovação
 
 # Requirements — módulo `contas` (TO-BE)
 
 > Gerado a partir de `.specs/legado/modulos/contas/regras.md` (RN-CON-001..015) e `duvidas.md`.
-> Decisões que dependiam de dúvidas foram aprovadas em 25/09/2026 — ver ADR-003. O adendo (REQ-CON-11..12) segue o ADR-004, ainda proposto.
+> Decisões que dependiam de dúvidas foram aprovadas em 25/09/2026 — ver ADR-003. O adendo REQ-CON-11..12 segue o ADR-004 e o REQ-CON-13 segue o ADR-005, ambos propostos.
 > Contrato: **mesmas rotas e formatos do legado** (`/api/bill_pays`, `/api/bill_receives`), salvo onde indicado — ADR-001.
 > Aceite: casos em `.specs/paridade/contas/`. Onde a decisão é *corrigir*, o caso ganha um bloco `divergencias`
 > com o resultado esperado no sistema novo e a referência ao ADR.
@@ -120,6 +120,21 @@ Origem: RN-CON-018 · Decisão: **corrigir** — ADR-004
 - `GET /total_today` e `GET /total_rest_of_month` DEVEM manter o formato `{ "total": number }`; "resto do mês" começa amanhã, ou hoje se amanhã já for outro mês (`legacy/app/Http/Controllers/Api/BillControllerTrait.php`).
 
 Aceite: `RN-CON-016-a-018-listagem-e-totais.json` → `totais_consistentes_com_a_lista: true` (divergência ADR-004).
+
+### REQ-CON-13 — Segurança transversal *(adendo — aguardando aprovação)*
+Origem: RN-AUT-001, RN-AUT-002, RN-AUT-003 · Decisão: **manter** os controles do legado + **corrigir** lacunas — ADR-005
+Motivo: revisão de segurança `docs/revisoes/2026-09-25-security-contas.md`.
+
+- QUANDO houver 5 tentativas de login erradas para o mesmo e-mail + IP, O SISTEMA DEVE responder **403**
+  `"Too many login attempts. Please try again in 60 seconds."` por 60 s (RN-AUT-001).
+- O SISTEMA DEVE limitar a API a 60 requisições/min por usuário (ou IP, sem autenticação), com cabeçalhos `X-RateLimit-*` (RN-AUT-002).
+- QUANDO o usuário fizer `POST /api/logout`, O SISTEMA DEVE invalidar o token (blacklist por `jti` até o `exp`) — RN-AUT-003.
+- O SISTEMA DEVE aceitar só JWT HS256 com `exp`, `nbf`, `iat`, `sub`, `jti`, de usuário existente; segredo ≥ 32 bytes obrigatório no boot.
+- O SISTEMA NÃO DEVE aceitar `id`, `client_id` ou campos desconhecidos no corpo (422); `repeat_number` ≤ 120; `value` ≤ 999.999.999,99.
+- Erros internos NÃO DEVEM expor tabela, coluna ou SQL; logs NÃO DEVEM conter senha, token ou cabeçalho `Authorization`.
+- Todo movimento de saldo DEVE registrar o usuário e a ação que o originou (auditoria).
+
+Aceite: `paridade/auth/RN-AUT-001-a-003-sessao.json` (paridade exata) + testes de segurança da T05, T06, T07, T12, T13 e T17.
 
 ---
 

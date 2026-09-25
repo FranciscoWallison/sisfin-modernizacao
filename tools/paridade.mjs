@@ -124,4 +124,6 @@ for (const arquivo of casos) {
   }
 }
 console.log(`\n${casos.length} caso(s), ${falhas} falha(s) — ${BASE} (alvo: ${ALVO})`);
-process.exit(falhas ? 1 : 0);
+// exitCode em vez de process.exit(): no Windows, sair com sockets do fetch abertos derruba o Node
+// (assert em src\win\async.c) e devolve código 127 em vez de 0/1.
+process.exitCode = falhas ? 1 : 0;

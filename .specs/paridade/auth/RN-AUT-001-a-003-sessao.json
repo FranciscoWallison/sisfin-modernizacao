@@ -1,0 +1,129 @@
+{
+  "rn": [
+    "RN-AUT-001",
+    "RN-AUT-002",
+    "RN-AUT-003"
+  ],
+  "descricao": "Bloqueio de login após 5 erros (e-mail único por execução), limite de requisições e logout que invalida o token.",
+  "usuarios": {
+    "padrao": {
+      "email": "cliente1@user.com",
+      "password": "secret"
+    },
+    "sessao": {
+      "email": "cliente4@user.com",
+      "password": "secret"
+    }
+  },
+  "passos": [
+    {
+      "nome": "erro_1",
+      "metodo": "POST",
+      "rota": "/api/access_token",
+      "corpo": {
+        "email": "bloqueio-{{execucao}}@x.com",
+        "password": "errada"
+      }
+    },
+    {
+      "nome": "erro_2",
+      "metodo": "POST",
+      "rota": "/api/access_token",
+      "corpo": {
+        "email": "bloqueio-{{execucao}}@x.com",
+        "password": "errada"
+      }
+    },
+    {
+      "nome": "erro_3",
+      "metodo": "POST",
+      "rota": "/api/access_token",
+      "corpo": {
+        "email": "bloqueio-{{execucao}}@x.com",
+        "password": "errada"
+      }
+    },
+    {
+      "nome": "erro_4",
+      "metodo": "POST",
+      "rota": "/api/access_token",
+      "corpo": {
+        "email": "bloqueio-{{execucao}}@x.com",
+        "password": "errada"
+      }
+    },
+    {
+      "nome": "erro_5",
+      "metodo": "POST",
+      "rota": "/api/access_token",
+      "corpo": {
+        "email": "bloqueio-{{execucao}}@x.com",
+        "password": "errada"
+      },
+      "caminho": "message"
+    },
+    {
+      "nome": "sexta_tentativa",
+      "metodo": "POST",
+      "rota": "/api/access_token",
+      "corpo": {
+        "email": "bloqueio-{{execucao}}@x.com",
+        "password": "errada"
+      },
+      "caminho": "message"
+    },
+    {
+      "nome": "usuario_autenticado",
+      "usuario": "sessao",
+      "rota": "/api/user",
+      "caminho": "email"
+    },
+    {
+      "nome": "logout",
+      "usuario": "sessao",
+      "metodo": "POST",
+      "rota": "/api/logout"
+    },
+    {
+      "nome": "token_apos_logout",
+      "usuario": "sessao",
+      "rota": "/api/user"
+    }
+  ],
+  "esperado": {
+    "erro_1": {
+      "status": 400
+    },
+    "erro_2": {
+      "status": 400
+    },
+    "erro_3": {
+      "status": 400
+    },
+    "erro_4": {
+      "status": 400
+    },
+    "erro_5": {
+      "status": 400,
+      "corpo": "These credentials do not match our records."
+    },
+    "sexta_tentativa": {
+      "status": 403,
+      "corpo": "Too many login attempts. Please try again in 60 seconds."
+    },
+    "usuario_autenticado": {
+      "status": 200,
+      "corpo": "cliente4@user.com"
+    },
+    "logout": {
+      "status": 204
+    },
+    "token_apos_logout": {
+      "status": 401
+    }
+  },
+  "capturado": {
+    "em": "2026-09-25",
+    "de": "http://localhost:8081"
+  }
+}

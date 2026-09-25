@@ -69,7 +69,33 @@
 - Rastreabilidade pegou IDs abreviados no `tasks.md` (`REQ-CON-01, 02`) — o sensor funcionou; corrigido para IDs completos.
 - Sensor inferencial: `security-reviewer` rodado sobre requirements + design — resultado na próxima entrada.
 
-**Próximo passo:** Francisco revisa `design.md`, `tasks.md` e o ADR-004; aprova o plano com `node tools/aprovar-tasks.mjs contas "Francisco"`. Depois, Fase A (T01–T08).
+## Etapa 5 — Revisão de segurança das specs · 25/09/2026
+
+**Objetivo:** passar requirements + design pelo sensor inferencial antes de aprovar o plano.
+
+- `security-reviewer` (subagente só-leitura) → **12 achados** (4 altos, 7 médios, 1 baixo), registrados em
+  `docs/revisoes/2026-09-25-security-contas.md`. Os que citavam o legado foram **conferidos** no código antes de aceitar.
+- Os 4 altos:
+  1. **Corrida no saldo** — a conta não era travada/relida na transação; dois pagamentos simultâneos debitariam duas vezes.
+     Design §5 agora trava a conta primeiro e há teste de concorrência (T12).
+  2. **Filtro de tenant incompleto** — extensão do Prisma não cobre SQL cru, `findUnique`, `*Many`, agregados, `connect`.
+     Design §4 lista modelos e operações, proíbe raw fora de `infra/` sem `clientId`, e o e2e A × B cobre totais e `/compat`.
+  3. **Perda do lockout e do rate limit do login** que o legado tinha.
+  4. **JWT sem algoritmo fixo e sem revogação.**
+- Sondas para os itens 3 e 4 viraram regras do módulo `auth` (`RN-AUT-001..003`) e um caso de paridade:
+  5 logins errados → 400; 6º → **403** "Too many login attempts"; logout → token seguinte **401**; `X-RateLimit-Limit: 60`;
+  payload do JWT sem `client_id` (só `sub` e `user{id,name,email}`).
+- **O harness tropeçou em dois problemas reais e foi corrigido:**
+  - Rodar a suíte várias vezes seguidas bateu no rate limit do próprio legado (**429**). `tools/lib/api.mjs` agora
+    respeita `Retry-After` e avisa no stderr.
+  - No Windows, `process.exit()` com sockets do `fetch` abertos derrubava o Node (assert em `src\win\async.c`, código 127).
+    `paridade.mjs` usa `process.exitCode`.
+- Adendo **REQ-CON-13** (segurança transversal) e **ADR-005** (auth-compat completo junto com `contas`; claim `user` no
+  JWT como risco aceito até o front novo) — **propostos**. `design.md` e `tasks.md` atualizados (T05–T07, T12–T14 maiores; T17 nova).
+- Estado: 9 casos de paridade passando contra o legado; rastreabilidade sem órfãos de requisito ou task.
+
+**Próximo passo:** Francisco revisa `design.md`, `tasks.md`, ADR-004 e ADR-005 (e o adendo REQ-CON-11..13) e aprova o
+plano com `node tools/aprovar-tasks.mjs contas "Francisco"`. Depois, Fase A (T01–T08).
 
 ---
 
@@ -79,3 +105,7 @@
 2. **O oráculo tem ambiente.** Versão de ICU mudou o comportamento da busca — fixar a imagem e tratar diferenças de ambiente como dúvida.
 3. **Sensores computacionais baratos pagam rápido.** A rastreabilidade pegou erro de formatação; o `oraculo-sql` provou regra de transação que a leitura do PHP só sugeria.
 4. **Bug encontrado vira decisão, não correção silenciosa.** Cada comportamento corrigido tem ADR e bloco `divergencias`.
+5. **Migração pode deixar o sistema menos seguro que o legado.** Lockout, rate limit e blacklist existiam em 2017 e
+   quase ficaram "para depois". Controles de segurança do legado são regras (`RN-AUT-*`), não detalhe de implementação.
+6. **Sensor inferencial + conferência humana.** O revisor LLM achou problemas que nenhum sensor computacional pegaria
+   (corrida, bypass de tenant); cada afirmação dele sobre o legado foi conferida antes de virar requisito.

@@ -97,7 +97,7 @@
     }
   ],
   "derivar": {
-    "filhas_visiveis_na_arvore": "JSON.stringify(arvore).includes('PAR-CAT9-F2-')"
+    "filhas_visiveis_na_arvore": "JSON.stringify(arvore).includes('PAR-CAT9-F2-' + execucao)"
   },
   "esperado": {
     "excluir_raiz": {

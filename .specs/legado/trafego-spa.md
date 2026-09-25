@@ -14,6 +14,7 @@
 | `#!/cash-flow` | `GET /api/cash_flows` |
 | `#!/statement` | `GET /api/statements?page=1&orderBy=id&sortedBy=asc&search=01/09/2026 - 30/09/2026&include=bankAccount` |
 | `#!/bank-account/create` | `GET /api/banks` |
+| `#!/bank-account/{id}/update` | `GET /api/banks` · `GET /api/bank_accounts/{id}?include=bank` (lido do código: `BankAccountUpdate.vue:52-60`; achado na B01) |
 
 ## Comportamentos que o contrato escrito não tinha
 

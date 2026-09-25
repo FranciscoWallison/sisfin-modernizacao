@@ -6,6 +6,8 @@ export interface Config {
   jwtEmissor: string;
   debugSql: boolean;
   origensCors: string[];
+  /** Base dos links de arquivos (logo dos bancos) — REQ-CBA-07: da configuração, nunca do cabeçalho Host. */
+  urlArquivos: string;
 }
 
 export class ConfigInvalidaError extends Error {}
@@ -24,6 +26,12 @@ export function lerConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (debugSql && ambiente !== 'development') {
     throw new ConfigInvalidaError('DEBUG_SQL=1 só é permitido com NODE_ENV=development (o log de SQL expõe parâmetros).');
   }
+  // Links de arquivos (logo dos bancos): URL http(s) sem barra final. Obrigatória em produção; em desenvolvimento, o
+  // storage do legado local (os arquivos moram lá durante o strangler — design de contas-bancarias §3).
+  const urlArquivos = (env.ASSETS_URL ?? (ambiente === 'production' ? '' : 'http://localhost:8081')).replace(/\/+$/, '');
+  if (!/^https?:\/\/[^\s/?#]+(\/[^\s?#]*)?$/.test(urlArquivos)) {
+    throw new ConfigInvalidaError('ASSETS_URL ausente ou inválida: informe a URL http(s) base dos arquivos (ex.: https://sisfin.exemplo.com).');
+  }
   return {
     ambiente,
     porta: Number(env.PORT ?? 3000),
@@ -32,5 +40,6 @@ export function lerConfig(env: NodeJS.ProcessEnv = process.env): Config {
     jwtEmissor: env.JWT_ISSUER ?? 'sisfin-api',
     debugSql,
     origensCors: (env.CORS_ORIGINS ?? '').split(',').map((o) => o.trim()).filter(Boolean),
+    urlArquivos,
   };
 }

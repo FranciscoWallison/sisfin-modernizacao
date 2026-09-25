@@ -2,14 +2,10 @@ import { Transform } from 'class-transformer';
 import {
   IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min, ValidateBy, ValidateIf,
 } from 'class-validator';
+import { paraBooleano, paraNumero } from '../../../shared/http/conversoes';
 
 // Corpo de POST/PUT de contas (design §6, REQ-CON-01/02/13). O SPA envia ids e valor às vezes como texto
 // (campos de formulário) — convertemos, mas sem aceitar lixo. Campos não declarados → 422 (whitelist global).
-
-const paraNumero = ({ value }: { value: unknown }) =>
-  typeof value === 'string' && value.trim() !== '' && !Number.isNaN(Number(value)) ? Number(value) : value;
-const paraBooleano = ({ value }: { value: unknown }) =>
-  value === 1 || value === '1' || value === 'true' ? true : value === 0 || value === '0' || value === 'false' ? false : value;
 
 /**
  * Valor monetário (REQ-CON-02 / REQ-CON-13): texto decimal com até 2 casas, > 0 e ≤ 999.999.999,99.

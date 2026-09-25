@@ -26,13 +26,15 @@ descrever('fluxo de caixa no banco (F03, integração)', () => {
     await base.$disconnect();
   });
 
-  it('parent_id IS NULL equivale à "profundidade 0" do legado no banco migrado — despesas E receitas (design §7)', async () => {
+  // Profundidade DENTRO do cliente: desde o ADR-007 o nested set é numerado por cliente (faixas de clientes diferentes
+  // se sobrepõem de propósito) — e é assim que o fluxo o usa (JOIN com c.client_id = r.client_id).
+  it('parent_id IS NULL equivale à "profundidade 0" (no cliente) no banco migrado — despesas E receitas (design §7)', async () => {
     const despesas = await base.$queryRaw<{ n: bigint }[]>`
       SELECT COUNT(*) AS n FROM category_expenses r
-      WHERE (r.parent_id IS NULL) <> ((SELECT COUNT(*) FROM category_expenses d WHERE r._lft BETWEEN d._lft AND d._rgt) - 1 = 0)`;
+      WHERE (r.parent_id IS NULL) <> ((SELECT COUNT(*) FROM category_expenses d WHERE d.client_id = r.client_id AND r._lft BETWEEN d._lft AND d._rgt) - 1 = 0)`;
     const receitas = await base.$queryRaw<{ n: bigint }[]>`
       SELECT COUNT(*) AS n FROM category_revenues r
-      WHERE (r.parent_id IS NULL) <> ((SELECT COUNT(*) FROM category_revenues d WHERE r._lft BETWEEN d._lft AND d._rgt) - 1 = 0)`;
+      WHERE (r.parent_id IS NULL) <> ((SELECT COUNT(*) FROM category_revenues d WHERE d.client_id = r.client_id AND r._lft BETWEEN d._lft AND d._rgt) - 1 = 0)`;
     expect([Number(despesas[0].n), Number(receitas[0].n)]).toEqual([0, 0]);
   });
 

@@ -74,7 +74,7 @@ jobs:
 
       - name: Paridade contra o sistema novo (com as divergências aprovadas por ADR)
         # Só os módulos JÁ MIGRADOS (os demais ainda não têm rota no sistema novo). Ao concluir um módulo, acrescente-o.
-        run: node tools/paridade.mjs --base http://localhost:3300 --alvo novo auth/ contas/ fluxo-de-caixa/
+        run: node tools/paridade.mjs --base http://localhost:3300 --alvo novo auth/ contas/ fluxo-de-caixa/ categorias/ contas-bancarias/
 
       - name: Testes de integração da API (tenant, transação, concorrência)
         working-directory: api
@@ -83,7 +83,9 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           npx prisma generate
-          npx jest
+          # Em série: as suítes de integração dividem o MESMO banco; em paralelo, uma lê o fluxo de caixa enquanto
+          # outra lança contas no mesmo mês (flakiness observada ao entrarem as suítes de categorias/contas-bancarias)
+          npx jest --runInBand
 
       - name: Logs em caso de falha
         if: failure()

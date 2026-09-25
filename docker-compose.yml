@@ -75,6 +75,8 @@ services:
       # Só desenvolvimento local. Diferente do segredo do legado (ADR-005): tokens não são intercambiáveis
       JWT_SECRET: sisfin-api-segredo-local-de-desenvolvimento-nao-usar-em-producao
       CORS_ORIGINS: http://localhost:8081,http://localhost:8083
+      # Base dos links de logo dos bancos (REQ-CBA-07): os arquivos moram no storage do legado durante o strangler
+      ASSETS_URL: http://localhost:8081
 
   # A MESMA tela do legado (SPA Vue 1 compilado de legacy/) servida duas vezes — só muda a API por trás.
   # É o Strangler Fig visível: o front não sabe qual backend atende.

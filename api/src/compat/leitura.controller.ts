@@ -1,62 +1,23 @@
-import { Controller, Get, NotFoundException, Param, ParseIntPipe, Query, Req, UnprocessableEntityException } from '@nestjs/common';
+import { Controller, Get, Inject, NotFoundException, Param, Query, Req, UnprocessableEntityException } from '@nestjs/common';
 import type { Request } from 'express';
+import { CONFIG } from '../shared/auth-compat/contexto';
+import type { Config } from '../shared/config/config';
+import { IdDaRotaPipe } from '../shared/http/id-da-rota.pipe';
 import { limiteDaQuery, metaPaginacao, paginaDaQuery } from '../shared/http/paginacao';
-import { dataCarbon, dinheiro } from '../shared/http/serializacao';
+import { contaBancaria, ContaBancariaLida, dinheiro } from '../shared/http/serializacao';
 import { ComCliente } from '../shared/tenant/com-cliente';
 import { LeituraRepositorio, ORDEM_CONTA_BANCARIA, ORDEM_EXTRATO, Sentido } from './infra/leitura.repositorio';
 
-// Fatias de LEITURA compatíveis (T08): o que o módulo contas, a paridade e o SPA usam.
+// Fatias de LEITURA compatíveis (T08): o que o módulo contas, a paridade e o SPA usam. As categorias saíram
+// daqui para o módulo `categorias` (G04).
 // Formatos: contrato.md + trafego-spa.md (parâmetros reais do SPA). Serão substituídas pelos módulos
 // contas-bancarias, categorias e extrato quando forem migrados.
 
-type Banco = { id: number; name: string; logo: string; createdAt: Date | null; updatedAt: Date | null };
-type ContaBancaria = {
-  id: number; name: string; agency: string | null; account: string | null; balance: unknown; default: boolean;
-  bankId: number; createdAt: Date | null; updatedAt: Date | null; bank?: Banco;
-};
-type Categoria = { id: number; name: string; parentId: number | null; lft: number; createdAt: Date | null; updatedAt: Date | null };
+type ContaBancaria = ContaBancariaLida;
 
-const hostDe = (req: Request) => `${req.protocol}://${req.get('host')}`;
-const urlBase = (req: Request) => `${hostDe(req)}${req.path}`;
+// Links de paginação usam o host da requisição, como o legado; o logo dos bancos NÃO (ASSETS_URL — REQ-CBA-07)
+const urlBase = (req: Request) => `${req.protocol}://${req.get('host')}${req.path}`;
 const inclui = (req: Request, nome: string) => String(req.query.include ?? '').split(',').includes(nome);
-
-// legado (BankTransformer::makeLogoPath): "<url('/')>/storage/banks/imagens/<arquivo>"
-const banco = (b: Banco, host: string) => ({
-  id: b.id,
-  name: b.name,
-  logo: `${host}/storage/banks/imagens/${b.logo}`,
-  created_at: dataCarbon(b.createdAt),
-  updated_at: dataCarbon(b.updatedAt),
-});
-
-const contaBancaria = (c: ContaBancaria, host?: string) => ({
-  id: c.id,
-  name: c.name,
-  agency: c.agency,
-  account: c.account,
-  balance: dinheiro(c.balance as string),
-  default: c.default,
-  bank_id: c.bankId,
-  created_at: dataCarbon(c.createdAt),
-  updated_at: dataCarbon(c.updatedAt),
-  ...(c.bank && host ? { bank: { data: banco(c.bank, host) } } : {}),
-});
-
-/** Árvore de categorias a partir das raízes (legado: FindRootCategoriesCriteria + include recursivo de children). */
-function arvore(categorias: Categoria[]) {
-  const filhos = new Map<number | null, Categoria[]>();
-  for (const c of categorias) filhos.set(c.parentId, [...(filhos.get(c.parentId) ?? []), c]);
-  const montar = (c: Categoria, profundidade: number): unknown => ({
-    id: c.id,
-    name: c.name,
-    parent_id: c.parentId,
-    depth: profundidade,
-    created_at: dataCarbon(c.createdAt),
-    updated_at: dataCarbon(c.updatedAt),
-    children: { data: (filhos.get(c.id) ?? []).map((f) => montar(f, profundidade + 1)) },
-  });
-  return { data: (filhos.get(null) ?? []).map((c) => montar(c, 0)) };
-}
 
 /** orderBy/sortedBy por allowlist (design §7): fora dela → 422, nunca vira nome de coluna. */
 function ordemDaQuery<T extends string>(req: Request, permitidos: readonly T[]): { campo: T; sentido: Sentido } {
@@ -73,7 +34,10 @@ const buscaDaQuery = (valor: unknown) => (typeof valor === 'string' ? valor.trim
 
 @Controller('api')
 export class LeituraController {
-  constructor(private readonly repo: LeituraRepositorio) {}
+  constructor(
+    private readonly repo: LeituraRepositorio,
+    @Inject(CONFIG) private readonly config: Config,
+  ) {}
 
   @Get('bank_accounts/lists')
   @ComCliente()
@@ -88,29 +52,18 @@ export class LeituraController {
     const ordem = ordemDaQuery(req, Object.keys(ORDEM_CONTA_BANCARIA) as (keyof typeof ORDEM_CONTA_BANCARIA)[]);
     const { total, itens } = await this.repo.contasBancarias(pagina, ordem, buscaDaQuery(search), inclui(req, 'bank'));
     return {
-      data: itens.map((c) => contaBancaria(c as ContaBancaria, hostDe(req))),
+      data: itens.map((c) => contaBancaria(c as ContaBancaria, this.config.urlArquivos)),
       meta: metaPaginacao(total, itens.length, pagina.pagina, urlBase(req), req.query, pagina.limite),
     };
   }
 
   @Get('bank_accounts/:id')
   @ComCliente()
-  async contaBancaria(@Param('id', ParseIntPipe) id: number) {
-    const c = await this.repo.contaBancaria(id);
+  async contaBancaria(@Param('id', IdDaRotaPipe) id: number, @Req() req: Request) {
+    // include=bank: a tela de edição lê response.data.data.bank.data (BankAccountUpdate.vue) — B06
+    const c = await this.repo.contaBancaria(id, inclui(req, 'bank'));
     if (!c) throw new NotFoundException();
-    return { data: contaBancaria(c) };
-  }
-
-  @Get('category_expenses')
-  @ComCliente()
-  async categoriasDespesa() {
-    return arvore(await this.repo.categorias('despesa'));
-  }
-
-  @Get('category_revenues')
-  @ComCliente()
-  async categoriasReceita() {
-    return arvore(await this.repo.categorias('receita'));
+    return { data: contaBancaria(c, this.config.urlArquivos) };
   }
 
   @Get('statements')

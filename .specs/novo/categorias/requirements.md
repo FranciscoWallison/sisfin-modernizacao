@@ -1,9 +1,9 @@
-Status: rascunho — aguardando aprovação do Francisco
+Status: aprovado — Francisco, 25/09/2026 (com o plano, hash baf1b8d63868). Mudanças posteriores no fim do arquivo.
 
 # Requirements — módulo `categorias` (escrita) — TO-BE
 
 > Gerado de `.specs/legado/modulos/categorias/regras.md` (RN-CAT-001..011) e `duvidas.md` (DUV-CAT-001..006).
-> Contrato a preservar: `contrato.md` do módulo. Correções: ADR-007 (proposto).
+> Contrato a preservar: `contrato.md` do módulo. Correções: ADR-007 (aceito).
 > Aceite: `.specs/paridade/categorias/` com `--alvo novo` (divergências do ADR-007 registradas nos casos) + espelho.
 > Vale igualmente para `/api/category_revenues` e `/api/category_expenses`.
 

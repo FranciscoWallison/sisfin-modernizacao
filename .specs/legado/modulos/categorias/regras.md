@@ -16,6 +16,11 @@ mesmo código (trait), em tabelas separadas, cada uma em *nested set* (`kalnoy/n
 - **Evidência:** `CategoriesControllerTrait.php` (`store`/`update` re-leem com `find($id)` "serializada com a profundidade")
 - **Sonda:** `RN-CAT-001-arvore.json` (raiz depth 0, filha depth 1 apontando para a raiz, renomear mantendo o pai);
   `contas-bancarias/RN-CBA-007-…json` (`categoria_show_formato`) ✅
+- **Limite observado (sonda de 25/09, revisão de segurança S6):** uma cadeia de categorias é servida até **169 níveis**;
+  no 170º, `GET /api/category_*` e `GET /{id}` da raiz dão **500** — a árvore inteira do cliente deixa de abrir (o
+  `json_encode` do PHP tem profundidade máxima 512; cada nível consome 3). O `POST` do 170º nível é aceito (201).
+  Sonda: `PROF-…` em `category_revenues`, com limpeza no fim. Sem caso de paridade: 170 escritas por execução.
+  Decisão sobre um limite no sistema novo: DUV-CAT-007.
 - **Confiança:** alta
 
 ### RN-CAT-002 — Validação: `name` obrigatório; `parent_id` do MESMO cliente e do MESMO tipo

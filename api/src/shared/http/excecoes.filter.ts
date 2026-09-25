@@ -21,6 +21,14 @@ export class ExcecoesFilter implements ExceptionFilter {
       return;
     }
 
+    // Erros 4xx do body-parser (http-errors: corpo > 100 KB → 413, charset inválido → 415…) chegam aqui SEM ser
+    // HttpException: viravam 500 (revisão de segurança dos cadastros, S11). Mensagem genérica, sem ecoar a entrada.
+    const http = erro as { status?: unknown; type?: unknown };
+    if (typeof http.status === 'number' && http.status >= 400 && http.status < 500 && typeof http.type === 'string' && http.type.startsWith('entity.')) {
+      resposta.status(http.status).json({ message: http.status === 413 ? 'Payload Too Large' : 'Bad Request' });
+      return;
+    }
+
     const codigoPrisma = (erro as { code?: unknown })?.code;
     if (typeof codigoPrisma === 'string' && /^P\d{4}$/.test(codigoPrisma)) {
       if (codigoPrisma === 'P2025') {
@@ -31,9 +39,11 @@ export class ExcecoesFilter implements ExceptionFilter {
         resposta.status(422).json({ message: 'The given data was invalid.' });
         return;
       }
-      // Conflito de transação / deadlock (40P01) / serialização (40001): o cliente pode repetir
+      // Conflito de transação / deadlock (40P01) / serialização (40001) / espera de lock esgotada (55P03 —
+      // lock_timeout, S2) / transação interativa expirada (P2028): o cliente pode repetir
       const codigoBanco = (erro as { meta?: { code?: unknown } })?.meta?.code;
-      if (codigoPrisma === 'P2034' || (codigoPrisma === 'P2010' && (codigoBanco === '40P01' || codigoBanco === '40001'))) {
+      const conflitoNoBanco = codigoBanco === '40P01' || codigoBanco === '40001' || codigoBanco === '55P03';
+      if (codigoPrisma === 'P2034' || codigoPrisma === 'P2028' || (codigoPrisma === 'P2010' && conflitoNoBanco)) {
         resposta.status(409).json({ message: 'Conflict. Please try again.' });
         return;
       }

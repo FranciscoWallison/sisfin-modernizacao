@@ -1,9 +1,9 @@
-Status: rascunho — aguardando aprovação do Francisco
+Status: aprovado — Francisco, 25/09/2026 (com o plano, hash 547b3519e39d). Mudanças posteriores no fim do arquivo.
 
 # Requirements — módulo `contas-bancarias` (escrita + bancos) — TO-BE
 
 > Gerado de `.specs/legado/modulos/contas-bancarias/regras.md` (RN-CBA-001..009) e `duvidas.md` (DUV-CBA-001..005).
-> Contrato a preservar: `contrato.md` do módulo. Correções: ADR-007 (proposto).
+> Contrato a preservar: `contrato.md` do módulo. Correções: ADR-007 (aceito).
 > Aceite: `.specs/paridade/contas-bancarias/` com `--alvo novo` (divergências do ADR-007 registradas nos casos).
 
 ### REQ-CBA-01 — Criar e editar

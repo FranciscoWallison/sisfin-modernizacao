@@ -58,7 +58,8 @@ servida duas vezes: só muda a API por trás. É o *Strangler Fig* visível.
 | http://localhost:3300/health | API nova |
 
 Login: `cliente1@user.com` / `secret`. Na versão nova já funcionam **dashboard, contas a pagar/receber, contas bancárias,
-plano de contas, extrato e fluxo de caixa** (com o gráfico do dashboard); bancos ainda não foi migrado.
+plano de contas, extrato e fluxo de caixa** (com o gráfico do dashboard) — e, desde a etapa 19, também **criar, editar,
+mover e excluir categorias e contas bancárias**. Só a administração de bancos e as assinaturas continuam no legado.
 Os dados do banco novo vêm do legado: `node tools/migrar-dados.mjs`.
 
 | Versão antiga | Versão nova |
@@ -89,8 +90,8 @@ Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios 
 | contas | ✅ 19 regras, 9 dúvidas (todas respondidas), contrato | ✅ 8 casos + 4 regras n/a cobertas por tasks | ✅ requirements, design e tasks aprovados (hash `d854ed6545ef`) | ✅ **migrado** — paridade 9/9, espelho 15/15, 157 testes; revisado por segurança — ver [progresso](.specs/novo/contas/progresso.md) |
 | auth | 🟡 3 regras (controles de segurança) | ✅ 1 caso | 🟡 no REQ-CON-13 / ADR-005 | ⚪ |
 | fluxo-de-caixa | ✅ 8 regras, 5 dúvidas, contrato | ✅ 3 casos | ✅ aprovado (ADR-006) | ✅ **migrado** — paridade 3/3; tela e gráfico funcionando; DUV-FLX-005 pendente |
-| categorias (escrita) | ✅ 11 regras, 6 dúvidas, contrato | ✅ 6 casos | 🟡 rascunho — aguardando aprovação (ADR-007) | ⚪ (leitura já no compat) |
-| contas-bancarias (escrita + bancos) | ✅ 9 regras, 5 dúvidas, contrato | ✅ 4 casos | 🟡 rascunho — aguardando aprovação (ADR-007) | ⚪ (leitura já no compat) |
+| categorias (escrita) | ✅ 11 regras, 7 dúvidas, contrato | ✅ 6 casos | ✅ aprovado (ADR-007, hash `baf1b8d63868`) | ✅ **migrado** — paridade 6/6; tela funcionando; revisado por segurança; DUV-CAT-004 e 007 pendentes — ver [progresso](.specs/novo/categorias/progresso.md) |
+| contas-bancarias (escrita + bancos) | ✅ 9 regras, 5 dúvidas, contrato | ✅ 4 casos | ✅ aprovado (ADR-007, hash `547b3519e39d`) | ✅ **migrado** — paridade 4/4; espelho 20/20; telas de criar e editar funcionando — ver [progresso](.specs/novo/contas-bancarias/progresso.md) |
 | assinaturas | ⚪ | ⚪ | ⚪ | ⚪ |
 
 O passo a passo completo, com descobertas e lições, está no [diário de bordo](docs/diario-de-bordo.md).

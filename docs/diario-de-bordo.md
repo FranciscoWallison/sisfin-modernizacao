@@ -759,6 +759,56 @@ salvam na versão nova (plano de contas, criar/editar conta bancária).
 **Próximo passo:** Francisco decide as DUV-CAT-001..003 e DUV-CBA-001, 003 e 005 (ADR-007) e aprova os dois planos:
 `node tools/aprovar-tasks.mjs categorias "Francisco"` e `node tools/aprovar-tasks.mjs contas-bancarias "Francisco"`.
 
+## Etapa 19 — `categorias` e `contas-bancarias`: implementação (G01–G07, B01–B07) · 25/09/2026
+
+**Aprovação:** Francisco aprovou os dois planos (hashes `baf1b8d63868` e `547b3519e39d`), aceitando o ADR-007.
+
+- **Oráculo limpo sem recriar o banco:**
+  - Recriar o volume do legado foi bloqueado pelas permissões.
+  - Em vez disso, criei `tools/reparar-oraculo.mjs`: o **dono** de cada categoria órfã ou "invadida" faz `PUT` sem
+    `parent_id` e ela volta a ser raiz (RN-CAT-007). Tudo pela API, como um usuário faria.
+  - É necessário porque os casos RN-CAT-003 e RN-CAT-009 corrompem o oráculo de propósito a cada rodada.
+  - Um derivado de caso (`filhas_visiveis_na_arvore`) dependia de resíduo de rodadas anteriores. Passou a olhar só a
+    execução atual.
+- **G01:** o espelho acusou 2 rotas de categorias; com o compat ordenando por `id`, voltou a 0.
+- **G02/G03:**
+  - Nested set **renumerado por cliente**, a partir de `parent_id`, numa transação com advisory lock `(árvore, cliente)`.
+  - 7 testes de integração, entre eles: nenhuma linha de outro cliente muda, 10 escritas concorrentes, fluxo de caixa
+    seguindo a categoria movida e árvore corrompida → rollback.
+  - **Mutação:** sem o lock, a árvore quebra.
+  - Um teste do fluxo (F03) comparava profundidade por `_lft/_rgt` **global**. Passou a medir por cliente, como
+    previsto no ADR-007.
+- **G04 e B05:** **paridade 6/6 e 4/4 de primeira**; 22/22 no total, nos dois alvos.
+- **B01, achado:** a tela de edição de conta bancária chama `GET /api/bank_accounts/{id}?include=bank`, e o compat
+  ignorava o `include`. A tela quebraria antes de salvar, e nenhum caso de paridade pegava isso. Corrigido; o espelho
+  ganhou essa URL e `/api/banks` (20 rotas).
+- **B02:** o índice único **parcial** (uma padrão por cliente) exigiu migration manual. `prisma migrate diff` sem drift.
+- **B04:** além do lock das linhas, a troca da padrão ganhou um advisory lock por cliente. Sem padrão atual, não há
+  linha para travar. A mutação prova: sem ele, 6 criações simultâneas falham em 4 de 4. Na primeira versão, o teste
+  só matava a mutação em 2 de 3 rodadas, porque dependia de o cliente já ter uma padrão. Zerar antes o tornou
+  determinístico.
+- **Telas (G05/B06), Playwright em :8083:**
+  - Plano de contas: criar, criar filha, promover e excluir funcionam. O tráfego real confirmou duas previsões do AS-IS:
+    `{"id":0,…}` ao criar e `PUT` sem `parent_id` para promover.
+  - Um fato novo: o select manda `parent_id` **em texto** (`"167"`).
+  - Conta bancária: criar e editar funcionam. O `PUT` real levou o objeto inteiro do GET, como previsto na RN-CBA-009.
+- **Flakiness:** em paralelo, uma suíte lia o fluxo de caixa enquanto outra lançava contas no mesmo mês. A CI passou a
+  rodar o jest **em série** (`--runInBand`).
+- **Revisão de segurança (G06/B07):** 0 altos, 11 achados.
+  - **S1:** 30 mil categorias travavam o event loop por **7–10 s** (O(n²)). Agora é linear.
+  - **S2:** fila de lock sem limite. Agora 409 em 3 s.
+  - **S5:** o revisor atribuiu ao DTO, mas era o `ValidationPipe` do Nest, recursivo, em **toda** rota com corpo,
+    inclusive o login.
+  - **S11 (novo, achado ao testar o S5):** corpo maior que 100 KB virava 500 no nosso filtro de exceções.
+  - **S6:** medi o legado antes de propor limite. Ele serve **169 níveis** de categorias e quebra a árvore inteira no
+    170º. O novo aguenta mais de 1.000, então o limite virou DUV-CAT-007.
+  - Cada achado teve teste vermelho antes da correção.
+- **Ciclo completo:** 268 testes (22 suítes), arquitetura sem violações, rastreabilidade strict, espelho **20/20**,
+  paridade **22/22** no legado e no novo.
+
+**Pendências:** DUV-CAT-004 (órfãs no cutover), DUV-CAT-007 (limite de profundidade), DUV-FLX-005; links de paginação
+pela config (S10); o 1º CI real no push.
+
 ---
 
 ## Lições até aqui
@@ -787,3 +837,9 @@ salvam na versão nova (plano de contas, criar/editar conta bancária).
     vítima depois do ataque), não só o status do atacante.
 18. **O corpo que a tela envia faz parte do contrato.** Uma whitelist correta em teoria quebraria a edição de conta
     bancária; só a leitura do componente Vue mostrou o objeto inteiro indo no `PUT`.
+19. **O revisor pode acertar o sintoma e errar a causa.** O teste do S5 continuou vermelho depois da correção proposta
+    (no DTO); a pilha do erro mostrou que o problema era do framework e valia para toda rota — inclusive o login.
+20. **Um teste que falha pelo motivo errado ainda é informação.** O corpo de 120 KB do teste do S5 revelou que o erro
+    413 do body-parser virava 500 (S11). Ler o log pelo id de correlação levou ao achado.
+21. **Antes de impor um limite, meça o legado.** O legado quebra em 170 níveis de categorias; o novo aguenta mais de
+    1.000. O limite deixou de ser correção urgente e virou decisão de produto (DUV-CAT-007).

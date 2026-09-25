@@ -1,4 +1,4 @@
-Status: rascunho
+Status: aprovado · Aprovado por: Francisco · Em: 2026-09-25 · Hash: 547b3519e39d
 
 # Tasks — módulo `contas-bancarias` (escrita + bancos)
 

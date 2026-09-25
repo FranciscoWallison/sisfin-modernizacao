@@ -1,4 +1,4 @@
-Status: rascunho
+Status: aprovado · Aprovado por: Francisco · Em: 2026-09-25 · Hash: baf1b8d63868
 
 # Tasks — módulo `categorias` (escrita)
 

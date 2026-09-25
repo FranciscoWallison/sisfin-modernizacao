@@ -1,6 +1,6 @@
 # ADR-007 — Comportamentos do legado corrigidos nos módulos `categorias` e `contas-bancarias`
 
-- **Status:** proposto — aguardando aprovação do Francisco
+- **Status:** aceito — aprovado — Francisco, 25/09/2026 (com os planos: categorias hash baf1b8d63868, contas-bancarias hash 547b3519e39d)
 - **Data:** 25/09/2026
 
 ## Contexto

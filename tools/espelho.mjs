@@ -45,6 +45,9 @@ const ROTAS = [
   ['c1', '/api/bank_accounts'],
   ['c1', '/api/bank_accounts/lists'], // contas a pagar
   ['c1', `/api/bank_accounts/${contaDoC1}`],
+  ['c1', `/api/bank_accounts/${contaDoC1}?include=bank`], // tela de edição (BankAccountUpdate.vue)
+  ['c1', '/api/banks'], // autocomplete de criar/editar conta bancária
+  ['c3', '/api/banks'], // lista global: igual para todos
   ['c1', '/api/category_expenses'], // plano de contas
   ['c1', '/api/category_revenues'],
   ['c1', '/api/statements?page=1&orderBy=id&sortedBy=asc&search=01%2F09%2F2026+-+30%2F09%2F2026&include=bankAccount'], // extrato

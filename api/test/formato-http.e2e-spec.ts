@@ -89,7 +89,15 @@ describe('configuração no boot (T05)', () => {
   });
   it('recusa segredo de exemplo/desenvolvimento em produção', () => {
     expect(() => lerConfig({ NODE_ENV: 'production', JWT_SECRET: 'sisfin-api-segredo-local-de-desenvolvimento-nao-usar-em-producao' })).toThrow(/exemplo/);
-    expect(lerConfig({ NODE_ENV: 'production', JWT_SECRET: 'k3v9$Qz!pX7wL2mN8rT4yB6cH1dF5gJ0s' }).ambiente).toBe('production');
+    expect(lerConfig({ NODE_ENV: 'production', JWT_SECRET: 'k3v9$Qz!pX7wL2mN8rT4yB6cH1dF5gJ0s', ASSETS_URL: 'https://sisfin.example.com' }).ambiente).toBe('production');
+  });
+  it('ASSETS_URL (REQ-CBA-07): obrigatória e http(s) em produção; padrão local fora dela; sem barra final', () => {
+    const producao = { NODE_ENV: 'production', JWT_SECRET: 'k3v9$Qz!pX7wL2mN8rT4yB6cH1dF5gJ0s' };
+    expect(() => lerConfig(producao)).toThrow(/ASSETS_URL/);
+    expect(() => lerConfig({ ...producao, ASSETS_URL: 'javascript:alert(1)' })).toThrow(/ASSETS_URL/);
+    expect(() => lerConfig({ ...producao, ASSETS_URL: 'https://a.com/x?y=1' })).toThrow(/ASSETS_URL/);
+    expect(lerConfig({ ...producao, ASSETS_URL: 'https://cdn.example.com/sisfin/' }).urlArquivos).toBe('https://cdn.example.com/sisfin');
+    expect(lerConfig(configOk).urlArquivos).toBe('http://localhost:8081');
   });
   it('recusa DEBUG_SQL fora de development', () => {
     expect(() => lerConfig({ ...configOk, NODE_ENV: 'production', DEBUG_SQL: '1' })).toThrow(/DEBUG_SQL/);

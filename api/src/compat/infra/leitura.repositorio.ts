@@ -39,17 +39,12 @@ export class LeituraRepositorio {
     return { total, itens };
   }
 
-  contaBancaria(id: number) {
-    return this.db.bankAccount.findUnique({ where: { id } });
+  contaBancaria(id: number, comBanco = false) {
+    return this.db.bankAccount.findUnique({ where: { id }, include: { bank: comBanco } });
   }
 
   listaContasBancarias() {
     return this.db.bankAccount.findMany({ select: { id: true, name: true, account: true }, orderBy: { id: 'asc' } });
-  }
-
-  categorias(tipo: 'despesa' | 'receita') {
-    const args = { orderBy: { lft: 'asc' as const } };
-    return tipo === 'despesa' ? this.db.categoryExpense.findMany(args) : this.db.categoryRevenue.findMany(args);
   }
 
   /** `search` é IGNORADO de propósito: o legado não declara campos pesquisáveis no extrato (trafego-spa.md). */

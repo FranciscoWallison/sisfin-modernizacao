@@ -1,8 +1,8 @@
-Status: rascunho
+Status: aprovado — Francisco, 26/09/2026 (com o plano, hash 542d2e109610). Mudanças posteriores no fim do arquivo.
 
 # Design — módulo `assinaturas` — TO-BE
 
-> Implementa `requirements.md` (REQ-ASS-01..07). Decisões: ADR-011 (proposto). Segue o caminho do ADR-009 (API +
+> Implementa `requirements.md` (REQ-ASS-01..07). Decisões: ADR-011 (aceito). Segue o caminho do ADR-009 (API +
 > `web/`, login único por JWT).
 
 ## 1. Dados (migration Prisma)
@@ -86,3 +86,21 @@ Com as chaves **de teste** do Francisco num `.env` fora do git: `PAGAMENTOS=stri
 | Cobrança dupla | Uma assinatura viva por cliente (lock + índice único parcial) |
 | Chave vazada num repositório público | Só em variável de ambiente; config recusa chave ausente em produção; nada de chave no front |
 | Ligar o gate derruba todos os clientes | Desligado por padrão; ligar é decisão registrada |
+
+## Mudanças após a aprovação (implementação e revisão de segurança, 26/09/2026)
+
+| Mudança | Por quê |
+|---|---|
+| Fim do período lido dos **itens** da assinatura | Na API fixada pelo SDK 22 (`2026-08-26.dahlia`), `current_period_end` saiu da assinatura |
+| `clients.checkout_session_id/url/expires_at` e `subscriptions.last_event_at` | Reaproveitar/expirar a sessão aberta (cobrança dupla) e ignorar evento mais antigo que o último aplicado |
+| Gate decide pelo **status**, não pelo `canceled_at`; tolerância de 2 dias após o fim do período | No Stripe, "cancelar no fim do período" preenche o `canceled_at` na hora; renovação atrasada não bloqueia quem pagou (S7) |
+| `past_due` bloqueia | Como "inativa" no legado |
+| Estado gravado = **estado atual no provedor** (`estadoAtual`) + eventos da mesma assinatura em série (advisory lock) | Revisão S1 (alta): `created` e `updated` simultâneos gravavam o mais antigo |
+| `incomplete` não impede nova assinatura (índice parcial e checkout) | Revisão S8 |
+| Assinatura **vigente** (`escolherVigente`) na tela e no gate | Revisão S3 |
+| Checkout consulta o provedor e expira a sessão anterior | Revisão S4 |
+| Simulador só em `development`/`test`; produção só com chave `live` e `SITE_URL` https | Revisões S5 e S6 |
+| `/api/hooks/stripe` fora do limite de 60/min por IP | Revisão S7 |
+| Eventos `checkout.session.completed` e `invoice.*` são aceitos (200) sem mudar estado | O estado vem de `customer.subscription.*` (o objeto da assinatura traz status e período); fatura paga ou falha chega junto como `subscription.updated` |
+| `customer.subscription.paused/resumed` tratados | Revisão S10 |
+

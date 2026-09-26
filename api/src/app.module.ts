@@ -1,5 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AdminBancosModule } from './modules/admin-bancos/admin-bancos.module';
+import { AssinaturasModule } from './modules/assinaturas/assinaturas.module';
 import { CompatModule } from './compat/compat.module';
 import { CadastroModule } from './modules/cadastro/cadastro.module';
 import { CategoriasModule } from './modules/categorias/categorias.module';
@@ -14,7 +15,7 @@ import { PrismaModule } from './shared/prisma/prisma.module';
 import { TenantModule } from './shared/tenant/tenant.module';
 
 @Module({
-  imports: [PrismaModule, AuthCompatModule, TenantModule, CompatModule, ContasModule, CategoriasModule, ContasBancariasModule, ExtratoModule, CadastroModule, FluxoDeCaixaModule, AdminBancosModule],
+  imports: [PrismaModule, AuthCompatModule, TenantModule, CompatModule, ContasModule, CategoriasModule, ContasBancariasModule, ExtratoModule, CadastroModule, FluxoDeCaixaModule, AdminBancosModule, AssinaturasModule],
   controllers: [HealthController],
 })
 export class AppModule implements NestModule {

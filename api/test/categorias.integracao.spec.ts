@@ -83,7 +83,7 @@ descrever('categorias no banco (G03, integração)', () => {
     expect(await base.categoryExpense.count({ where: { id: { in: [r2, f] } } })).toBe(0);
     conferirArvore(await linhasDoCliente(clienteA));
     expect(r).toBeGreaterThan(0);
-  });
+  }, 20_000); // ~5 s com o banco do oráculo acumulado: passava raspando do timeout padrão (etapa 27)
 
   it('as escritas de A NÃO tocam nenhuma linha de outro cliente (numeração por cliente)', async () => {
     const outros = () => base.categoryExpense.findMany({ where: { clientId: { not: clienteA } }, orderBy: { id: 'asc' } });

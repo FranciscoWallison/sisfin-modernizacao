@@ -10,7 +10,7 @@
 | SPA do cliente ("my-financial") | `legacy/resources/assets/spa/` (Vue 1) | Token |
 | Admin (bancos) | `legacy/routes/web.php` prefixo `admin` | Sessão + gate `access-admin` |
 | Site (cadastro, login, assinatura) | `legacy/routes/web.php` prefixo `/` | Sessão |
-| Webhook Iugu | `POST /api/hooks/iugu` | ⚠️ nenhuma |
+| Webhook Iugu | `POST /api/hooks/iugu` | ⚠️ nenhuma — não migrado; no novo, `POST /api/hooks/stripe` com assinatura verificada (ADR-011) |
 
 ## Módulos
 
@@ -22,7 +22,7 @@
 | bancos | `Admin\BanksController`, `Api\BanksController` | `Api`: em `contas-bancarias` (RN-CBA-007); `Admin`: `.specs/legado/modulos/admin-bancos/` | ✅ `GET /api/banks` migrado; ✅ admin migrado (`api/src/modules/admin-bancos` + `web/`, ADR-010) |
 | extrato | `Api\StatementsController` | `.specs/legado/modulos/extrato/` | ✅ migrado (`api/src/modules/extrato`) |
 | fluxo-de-caixa | `Api\CashFlowsController` | `.specs/legado/modulos/fluxo-de-caixa/` | ✅ migrado (`api/src/modules/fluxo-de-caixa`) |
-| assinaturas | `Site\SubscriptionsController`, `Api\IuguController`, `app/Iugu/*` | `.specs/legado/modulos/assinaturas/` | 🟡 AS-IS + TO-BE proposto (Stripe no lugar da Iugu, ADR-011) |
+| assinaturas | `Site\SubscriptionsController`, `Api\IuguController`, `app/Iugu/*` | `.specs/legado/modulos/assinaturas/` | ✅ migrado com o Stripe no lugar da Iugu (`api/src/modules/assinaturas` + `web/`, ADR-011); roteiro com o Stripe real pendente |
 | auth | `Api\AuthController`, `Auth\*`, `app/Jwt` | RN-AUT-* (em `contas`) | ✅ API de login/refresh/logout migrada (auth-compat, ADR-005) |
 | site (cadastro, login, convite) | `Site\Auth\*`, `Site\SubscriptionsController@invite*`, middleware `auth.from_token` | `.specs/legado/modulos/site/` | ✅ migrado: `POST /api/register` (`api/src/modules/cadastro`) + telas Vue 3 (`web/`); convite não migrado (ADR-009) |
 

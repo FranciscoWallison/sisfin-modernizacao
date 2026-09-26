@@ -9,6 +9,7 @@ export const MODELOS_COM_TENANT = new Set([
   'Statement',
   'CategoryExpense',
   'CategoryRevenue',
+  'Subscription', // assinaturas (ADR-011): a assinatura é do cliente
 ]);
 
 export class ViolacaoTenantError extends Error {}

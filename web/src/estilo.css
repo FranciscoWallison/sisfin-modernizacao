@@ -20,3 +20,6 @@ button[disabled] { opacity: 0.6; cursor: wait; }
 .tabela .acoes button { margin-top: 0; padding: 6px 10px; font-size: 0.9rem; }
 button.perigo { background: var(--erro); }
 .acoes { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.preco { font-size: 1.3rem; font-weight: 600; margin: 8px 0; }
+.nota { font-size: 0.85rem; color: #616161; margin-top: 16px; }
+h2 { font-size: 1.1rem; margin: 20px 0 4px; }

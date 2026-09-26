@@ -93,7 +93,7 @@ jobs:
           # outra lança contas no mesmo mês (flakiness observada ao entrarem as suítes de categorias/contas-bancarias)
           npx jest --runInBand
 
-      - name: Site novo — E2E no navegador (cadastro, login, token fora da URL — ADR-009; admin de bancos — ADR-010)
+      - name: Site novo — E2E no navegador (cadastro e login — ADR-009; admin de bancos — ADR-010; assinatura com o simulador — ADR-011)
         # Chrome já instalado no runner (channel: 'chrome'); os testes unitários do web/ rodam no build da imagem
         working-directory: web
         run: |

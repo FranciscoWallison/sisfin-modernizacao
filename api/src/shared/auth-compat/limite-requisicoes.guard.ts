@@ -6,6 +6,12 @@ import { LimiteRequisicoes } from './controles';
 import { verificarToken } from './tokens';
 
 /**
+ * Rotas FORA do limite por IP: o webhook do Stripe se autentica pela assinatura (HMAC) e vem de poucos IPs do Stripe;
+ * um pico de renovações viraria 429 e horas de reenvio com o cliente pagante bloqueado (revisão A07, S7).
+ */
+const ROTAS_SEM_LIMITE = new Set(['/api/hooks/stripe']);
+
+/**
  * 60 req/min nas rotas /api (throttle:60,1 do legado — RN-AUT-002). Chave = usuário do token válido, senão IP.
  * Responde com X-RateLimit-Limit / X-RateLimit-Remaining e, ao estourar, 429 + Retry-After.
  */
@@ -20,7 +26,7 @@ export class LimiteRequisicoesGuard implements CanActivate {
     const req = ctx.switchToHttp().getRequest<RequisicaoComContexto>();
     // O Express roteia sem diferenciar maiúsculas: "/API/…" também é API (achado da revisão do código)
     const caminho = req.path.toLowerCase();
-    if (!caminho.startsWith('/api/')) return true;
+    if (!caminho.startsWith('/api/') || ROTAS_SEM_LIMITE.has(caminho.replace(/\/+$/, ''))) return true;
     const res = ctx.switchToHttp().getResponse<Response>();
 
     let chave = `ip:${req.ip}`;

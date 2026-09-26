@@ -35,6 +35,17 @@ const TABELAS = [
   { nome: 'users', colunas: ['id', 'name', 'email', 'password', 'remember_token', 'role', 'client_id', 'created_at', 'updated_at'] },
   { nome: 'banks', colunas: ['id', 'name', 'logo', 'created_at', 'updated_at'] },
   {
+    // Assinaturas (ADR-011): o legado guarda o valor como TEXTO ("40"); o `code` (id do plano na Iugu) não migra — o
+    // preço vive no Stripe (DUV-ASS-010). Valor que não é número aborta o ETL (nada é gravado).
+    nome: 'plans',
+    colunas: ['id', 'name', 'description', 'value', 'created_at', 'updated_at'],
+    transformar: (l) => {
+      const valor = Number(String(l.value).replace(',', '.'));
+      if (!Number.isFinite(valor)) throw new Error(`plans.id=${l.id}: value "${l.value}" não é número`);
+      return { ...l, value: valor.toFixed(2) };
+    },
+  },
+  {
     nome: 'bank_accounts',
     colunas: ['id', 'name', 'agency', 'account', 'default', 'balance', 'bank_id', 'client_id', 'created_at', 'updated_at'],
     transformar: (l) => ({ ...l, default: bool(l.default) }),
@@ -78,6 +89,8 @@ const contagens = [];
 try {
   await destino.query('BEGIN');
   await destino.query(`TRUNCATE ${TABELAS.map((t) => `"${t.nome}"`).reverse().join(', ')} RESTART IDENTITY CASCADE`);
+  // Assinaturas do Stripe e eventos já processados não vêm do legado: recomeçam vazios a cada carga (ADR-011)
+  await destino.query('TRUNCATE "subscriptions", "webhook_events" RESTART IDENTITY');
 
   for (const t of TABELAS) {
     const [linhas] = await origem.query(`SELECT ${t.colunas.filter((c) => c !== 'kind').map((c) => '`' + c + '`').join(', ')} FROM \`${t.nome}\` ORDER BY id`);
@@ -101,6 +114,11 @@ try {
   await destino.end();
   process.exit();
 }
+
+// Assinaturas da Iugu não são portáveis (o cartão é tokenizado na Iugu — DUV-ASS-009): só a contagem, para o cutover
+const [[iugu]] = await origem.query(
+  'SELECT (SELECT COUNT(*) FROM subscriptions) AS assinaturas, (SELECT COUNT(*) FROM orders) AS faturas, (SELECT COUNT(*) FROM clients WHERE code IS NOT NULL) AS clientes_na_iugu',
+);
 
 // ---- Verificações pós-carga (sobre o destino) ----
 const q = async (sql) => (await destino.query(sql)).rows;
@@ -204,6 +222,11 @@ ${tabelaMd(categoriasOrfas.slice(0, 50), ['tabela', 'id', 'parent_id'])}
 ${padroesDuplicadas.length ? `❌ ${padroesDuplicadas.length} cliente(s) — escolher uma padrão por cliente antes do cutover.` : '_nenhum_'}
 ${tabelaMd(padroesDuplicadas, ['cliente', 'n', 'contas'])}
 
+## Assinaturas da Iugu (DUV-ASS-009, ADR-011)
+
+Não migradas: assinaturas **${iugu.assinaturas}** · faturas **${iugu.faturas}** · clientes com cadastro na Iugu **${iugu.clientes_na_iugu}**.
+${Number(iugu.assinaturas) ? 'Quem tinha assinatura precisa assinar de novo pelo Stripe — avisar antes do cutover.' : '_Nenhuma assinatura a avisar._'}
+
 ## Tipos de extrato não reconhecidos
 
 ${tiposDesconhecidos.length ? tiposDesconhecidos.map((t) => `- \`${t.tipo}\``).join('\n') : '_nenhum_'}
@@ -216,7 +239,7 @@ mkdirSync(dirname(destinoRelatorio), { recursive: true });
 writeFileSync(destinoRelatorio, relatorio);
 
 console.table(contagens);
-console.log(`arredondamentos: ${arredondamentos.length} · saldo≠extrato: ${divergenciaSaldo.length} · órfãos: ${orfaos.length} · usuários sem cliente: ${semCliente.length} · referências entre clientes: ${cruzadas.length} · árvores entre clientes: ${arvoresCruzadas.length} · categorias órfãs: ${categoriasOrfas.length} · padrão duplicada: ${padroesDuplicadas.length}`);
+console.log(`arredondamentos: ${arredondamentos.length} · saldo≠extrato: ${divergenciaSaldo.length} · órfãos: ${orfaos.length} · usuários sem cliente: ${semCliente.length} · referências entre clientes: ${cruzadas.length} · árvores entre clientes: ${arvoresCruzadas.length} · categorias órfãs: ${categoriasOrfas.length} · padrão duplicada: ${padroesDuplicadas.length} · assinaturas Iugu (não migram): ${iugu.assinaturas}`);
 console.log(`relatório: ${destinoRelatorio.slice(raiz.length + 1)}`);
 await origem.end();
 await destino.end();

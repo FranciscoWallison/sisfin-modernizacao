@@ -41,6 +41,32 @@ describe('schema (T03)', () => {
     expect(s).toMatch(/"action" VARCHAR\(20\)/);
   });
 
+  describe('assinaturas (P01, ADR-011)', () => {
+    it('plans.value é DECIMAL(12,2) (o legado guardava texto — RN-ASS-001)', () => {
+      expect(tabela('plans')).toMatch(/"value" DECIMAL\(12,2\) NOT NULL/);
+    });
+
+    it('subscriptions pertence ao cliente (tenant) e guarda o id do provedor, único', () => {
+      const s = tabela('subscriptions');
+      expect(s).toMatch(/"client_id" INTEGER NOT NULL/);
+      expect(s).toMatch(/"provider_subscription_id" VARCHAR\(255\) NOT NULL/);
+      expect(sql).toMatch(/CREATE UNIQUE INDEX "subscriptions_provider_subscription_id_key"/);
+    });
+
+    it('no máximo UMA assinatura viva por cliente: índice único parcial (DUV-ASS-005)', () => {
+      expect(sql).toMatch(/CREATE UNIQUE INDEX "subscriptions_uma_viva_por_cliente" ON "subscriptions" \("client_id"\) WHERE "status" NOT IN \('canceled', 'incomplete_expired', 'incomplete'\)/);
+    });
+
+    it('webhook_events.id é a chave (idempotência por id do evento — REQ-ASS-03)', () => {
+      expect(tabela('webhook_events')).toMatch(/CONSTRAINT "webhook_events_pkey" PRIMARY KEY \("id"\)/);
+    });
+
+    it('clients.stripe_customer_id é único e opcional', () => {
+      expect(sql).toMatch(/ADD COLUMN\s+"stripe_customer_id" VARCHAR\(255\)[,;]/);
+      expect(sql).toMatch(/CREATE UNIQUE INDEX "clients_stripe_customer_id_key"/);
+    });
+  });
+
   it('categoria da conta aponta para a tabela do tipo certo (revisão de segurança #6)', () => {
     expect(sql).toMatch(/"bill_pays_category_id_fkey" FOREIGN KEY \("category_id"\) REFERENCES "category_expenses"/);
     expect(sql).toMatch(/"bill_receives_category_id_fkey" FOREIGN KEY \("category_id"\) REFERENCES "category_revenues"/);

@@ -79,6 +79,11 @@ services:
       ASSETS_URL: http://localhost:8083
       # Volume de arquivos: a API grava os logos em banks/imagens (admin de bancos — ADR-010)
       ARQUIVOS_DIR: /data/arquivos
+      # Assinaturas (ADR-011): local usa o SIMULADOR (sem rede nem chave) e o segredo de webhook só local do simulador.
+      # Para o Stripe de verdade (roteiro da P07), as chaves de TESTE vão num .env fora do git — nunca aqui.
+      PAGAMENTOS: simulador
+      SITE_URL: http://localhost:8083
+      EXIGIR_ASSINATURA: "false"
       # Local: o E2E cadastra a cada execução; em produção vale o padrão (5 por IP por hora — S3)
       CADASTROS_POR_HORA: "200"
     volumes: [arquivos:/data/arquivos]

@@ -15,9 +15,16 @@ model Client {
   name      String    @db.VarChar(255)
   email     String    @db.VarChar(255)
   code      String?   @db.VarChar(255)
+  /// Cliente no Stripe (ADR-011). O `code` é o id antigo na Iugu e fica como veio do legado.
+  stripeCustomerId String? @unique @map("stripe_customer_id") @db.VarChar(255)
+  /// Sessão de checkout ainda aberta: reaproveitada para o cliente não abrir duas e pagar duas vezes (ADR-011)
+  checkoutSessionId        String?   @map("checkout_session_id") @db.VarChar(255)
+  checkoutSessionUrl       String?   @map("checkout_session_url") @db.VarChar(2048)
+  checkoutSessionExpiresAt DateTime? @map("checkout_session_expires_at") @db.Timestamp(0)
   createdAt DateTime? @map("created_at") @db.Timestamp(0)
   updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
 
+  subscriptions     Subscription[]
   users             User[]
   bankAccounts      BankAccount[]
   categoryExpenses  CategoryExpense[]
@@ -181,4 +188,50 @@ model Statement {
   @@index([clientId, bankAccountId, createdAt, id])
   @@index([statementableType, statementableId])
   @@map("statements")
+}
+
+// Assinaturas (ADR-011, design de assinaturas §1). O preço de verdade mora no Stripe; `plans` é o que a tela mostra.
+model Plan {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(255)
+  description String    @db.VarChar(255)
+  value       Decimal   @db.Decimal(12, 2)
+  createdAt   DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime? @map("updated_at") @db.Timestamp(0)
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+/// Assinatura do CLIENTE (tenant). No máximo uma viva por cliente: índice único parcial na migration (DUV-ASS-005).
+/// `incomplete` (3DS abandonado) não conta como viva: o cliente pode tentar pagar de novo (revisão A07, S8).
+model Subscription {
+  id                     Int       @id @default(autoincrement())
+  clientId               Int       @map("client_id")
+  planId                 Int?      @map("plan_id")
+  providerSubscriptionId String    @unique @map("provider_subscription_id") @db.VarChar(255)
+  /// Status do Stripe: active, trialing, past_due, canceled, unpaid, incomplete, incomplete_expired, paused
+  status                 String    @db.VarChar(30)
+  currentPeriodEnd       DateTime? @map("current_period_end") @db.Timestamp(0)
+  cancelAtPeriodEnd      Boolean   @default(false) @map("cancel_at_period_end")
+  canceledAt             DateTime? @map("canceled_at") @db.Timestamp(0)
+  /// Instante (do Stripe) do último evento aplicado: evento mais antigo que chega depois é ignorado (ordem não garantida)
+  lastEventAt            DateTime? @map("last_event_at") @db.Timestamp(0)
+  createdAt              DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt              DateTime? @map("updated_at") @db.Timestamp(0)
+
+  client Client @relation(fields: [clientId], references: [id])
+  plan   Plan?  @relation(fields: [planId], references: [id])
+
+  @@map("subscriptions")
+}
+
+/// Eventos do webhook já processados: idempotência pelo id do evento (REQ-ASS-03).
+model WebhookEvent {
+  id         String   @id @db.VarChar(255)
+  type       String   @db.VarChar(100)
+  receivedAt DateTime @map("received_at") @db.Timestamp(0)
+
+  @@map("webhook_events")
 }

@@ -1,9 +1,9 @@
-Status: rascunho
+Status: aprovado — Francisco, 26/09/2026 (com o plano, hash 542d2e109610). Mudanças posteriores no fim do arquivo.
 
 # Requirements — módulo `assinaturas` — TO-BE
 
 > Gerado de `.specs/legado/modulos/assinaturas/regras.md` (RN-ASS-001..009) e `duvidas.md` (DUV-ASS-001..010).
-> Decisões: ADR-011 (proposto). Aceite: integração (API + banco + webhooks assinados), E2E com o simulador e roteiro
+> Decisões: ADR-011 (aceito). Aceite: integração (API + banco + webhooks assinados), E2E com o simulador e roteiro
 > manual com o Stripe em modo de teste.
 
 ### REQ-ASS-01 — Plano

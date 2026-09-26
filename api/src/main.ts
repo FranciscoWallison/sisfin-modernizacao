@@ -6,7 +6,8 @@ import { configurarApp } from './shared/http/configurar-app';
 
 async function bootstrap(): Promise<void> {
   const config = lerConfig(); // lança e impede o boot se a configuração for insegura
-  const app = await NestFactory.create(AppModule);
+  // rawBody: o webhook do Stripe verifica a assinatura sobre o corpo CRU (ADR-011, REQ-ASS-03)
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   configurarApp(app, config);
   app.enableShutdownHooks();
   await app.listen(config.porta);

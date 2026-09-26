@@ -1,6 +1,7 @@
 // S03–S05 — partes puras do front novo: erros da API → tela, sessão compartilhada com o app, token fora da URL.
 import { describe, expect, it, vi } from 'vitest';
 import { chamar, interpretarErro } from '../src/api';
+import { destinoSeguro, estaAtiva, nomeDoStatus, reais } from '../src/assinatura';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import { rotas } from '../src/rotas';
 import { acessoAdmin, CHAVE_TOKEN, CHAVE_USUARIO, entrar, sair } from '../src/sessao';
@@ -122,5 +123,28 @@ describe('admin de bancos (A05, ADR-010)', () => {
   ])('rota %s → %s (cadastro e recuperação do /admin não migrados — REQ-ADB-02, 07)', (url, rota) => {
     const router = createRouter({ history: createMemoryHistory(), routes: rotas });
     expect(router.resolve(url).matched.at(-1)?.path).toBe(rota);
+  });
+});
+
+describe('assinatura (P06, ADR-011)', () => {
+  const origem = 'http://localhost:8083';
+  it.each([
+    ['https://checkout.stripe.com/c/pay/cs_test_a1', 'https://checkout.stripe.com/c/pay/cs_test_a1'],
+    ['https://billing.stripe.com/p/session/test_x', 'https://billing.stripe.com/p/session/test_x'],
+    ['http://localhost:8083/subscriptions/successfully?simulador=1', 'http://localhost:8083/subscriptions/successfully?simulador=1'],
+    ['https://evil.example.com/checkout', null],
+    ['https://checkout.stripe.com.evil.com/x', null],
+    ['http://checkout.stripe.com/x', null],
+    ['javascript:alert(1)', null],
+    ['/relativa', null],
+    [42, null],
+  ])('destino %s → %s', (url, esperado) => {
+    expect(destinoSeguro(url, origem)).toBe(esperado);
+  });
+
+  it('status em português e só active/trialing liberam', () => {
+    expect(nomeDoStatus('past_due')).toBe('Pagamento em atraso');
+    expect(['active', 'trialing', 'past_due', 'canceled'].map(estaAtiva)).toEqual([true, true, false, false]);
+    expect(reais(40)).toMatch(/R\$\s?40,00/);
   });
 });

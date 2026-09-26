@@ -1,6 +1,6 @@
 # ADR-011 — Assinaturas: Stripe no lugar da Iugu, atrás de uma porta com simulador
 
-- **Status:** proposto
+- **Status:** aceito — aprovado — Francisco, 26/09/2026 (com o plano, hash 542d2e109610)
 - **Data:** 26/09/2026
 
 ## Contexto

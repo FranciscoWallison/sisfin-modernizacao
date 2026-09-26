@@ -1,4 +1,4 @@
-Status: rascunho
+Status: aprovado · Aprovado por: Francisco · Em: 2026-09-26 · Hash: 542d2e109610
 
 # Tasks — módulo `assinaturas`
 

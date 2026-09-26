@@ -1075,6 +1075,49 @@ Vue 3**.
 **Próximo passo:** Francisco decide as DUV-ASS-002..010 (ADR-011) e aprova com
 `node tools/aprovar-tasks.mjs assinaturas "Francisco"`.
 
+## Etapa 27 — Módulo `assinaturas`: implementação (P01–P07) · 26/09/2026
+
+**Aprovação:** Francisco aprovou o plano (hash `542d2e109610`), aceitando o ADR-011.
+
+- **P01–P02 — dados, porta e simulador:**
+  - migration com `plans` (DECIMAL; o legado guardava "40" como texto), `subscriptions` do **cliente** (tenant) com
+    índice único parcial "uma viva por cliente", `webhook_events` (idempotência) e o cliente do Stripe em `clients`;
+  - `GatewayDePagamento` com dois adaptadores: Stripe (SDK 22.6.2, conferido no npm) e simulador;
+  - **achado nos tipos do SDK:** na API fixada (`2026-08-26.dahlia`) o fim do período mora nos **itens** da assinatura;
+  - **diferença deliberada do legado:** o gate decide pelo status. No Stripe, "cancelar no fim do período" preenche o
+    `canceled_at` na hora do pedido — a regra do legado cortaria o período já pago.
+- **P03–P05 — checkout, webhook e gate:** eventos assinados de verdade nos testes (`generateTestHeaderString`), como o
+  Stripe CLI envia. Tudo verde **de primeira** — e por isso não provava nada: 7 mutações, e a do lock do checkout
+  **passou**. Com o simulador instantâneo a janela de corrida não existia; o teste passou a simular a demora de uma
+  chamada real e aí pegou.
+- **Dois efeitos colaterais investigados antes de mexer:**
+  - o ETL da P01 pegou o oráculo sujo pela paridade → categorias e fluxo vermelhos; `reparar-oraculo` + ETL resolveram;
+  - um teste de categorias ficou em ~5 s (o timeout padrão). Medi **sem** o gate novo: mesmo tempo. Não era regressão;
+    o teste ganhou timeout explícito.
+- **P06 — telas:** plano, "processando" até o webhook confirmar, estado e portal em "Minha conta"; a tela só segue para
+  `checkout.stripe.com`, `billing.stripe.com` ou a própria origem. E2E com o simulador, assinando o evento com o segredo
+  local.
+- **P07 — revisão de segurança (`docs/revisoes/2026-09-26-security-assinaturas.md`): 1 alta, 4 médias.** A assinatura do
+  webhook estava certa; os problemas estavam **depois** dela:
+  - **S1 (alta, reproduzida):** o `created` (`incomplete`) e o `updated` (`active`) do fechamento do Checkout, juntos,
+    gravavam o mais antigo por último — o cliente **pagava e ficava bloqueado**, sem erro e sem reenvio. Correção: eventos
+    da mesma assinatura em série + gravar o **estado atual no Stripe**, como o Stripe recomenda;
+  - S2 (empate no mesmo segundo), S3 (última linha em vez da vigente), S4 (janela de cobrança dupla), S5 (simulador em
+    qualquer ambiente não-production), S6 (chave de teste em produção), S7 (webhook no limite por IP), S8 (`incomplete`
+    travando o checkout).
+  - Cada uma: teste vermelho **pelo motivo certo** antes, correção, e mutação depois (8 de 8 mordem; a do lock,
+    removendo a linha inteira, derruba exatamente o teste da corrida).
+- **Stripe real:** roteiro em `docs/roteiro-stripe.md`, com `docker-compose.stripe.yml` e `.env.stripe` fora do git.
+  Falta executar — a conta e as chaves de teste são do Francisco.
+- **Números:** API 461 testes (+72); web 34 unitários + 14 E2E; espelho 20/20; paridade 23/24 (RN-CAT-001, pendência
+  anterior).
+
+**Pendências:**
+- executar o roteiro do Stripe real;
+- segunda assinatura viva só vira log (sem cancelar/reembolsar); limpeza de `webhook_events`;
+- ligar o gate e boleto/Pix são decisões de produto;
+- as anteriores: RN-CAT-001 no oráculo local, ETL relatar nomes de banco com `< > " '`, CSP do `/app`, `trust proxy`.
+
 ---
 
 ## Lições até aqui
@@ -1125,3 +1168,7 @@ Vue 3**.
     nome do banco em HTML sem escapar; o sistema novo é a única via para gravar esse nome, e é lá que ele é validado.
 29. **Sequências independentes colidem com o tempo.** Um caso que usava "um id de outra tabela" como pai inválido
     passou a acertar um id válido quando uma sequência ultrapassou a outra.
+30. **Teste verde de primeira não prova nada — e o simulador pode esconder a corrida.** Com o provedor falso
+    instantâneo, remover o lock não mudava nada; só com a demora de uma chamada real o teste passou a morder.
+31. **Autenticar a mensagem não basta: é preciso aplicar direito.** O webhook verificava a assinatura corretamente, e
+    mesmo assim um cliente pagante ficava bloqueado por dois eventos legítimos processados ao mesmo tempo.

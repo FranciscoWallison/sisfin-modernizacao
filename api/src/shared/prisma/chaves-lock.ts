@@ -5,4 +5,6 @@ export const CHAVES_ADVISORY_LOCK = {
   arvoreDeDespesas: 2, // categorias: escritas na árvore de despesas do cliente
   contaPadrao: 3, // contas-bancarias: troca da conta padrão do cliente
   logoDeBanco: 4, // admin-bancos: remoção de um arquivo de logo (2º argumento: hashtext do nome, não um cliente)
+  checkoutDoCliente: 5, // assinaturas: um checkout por vez por cliente (evita duas sessões e cobrança dupla)
+  eventoDaAssinatura: 6, // assinaturas: eventos da MESMA assinatura em série (2º argumento: hashtext do id no provedor)
 } as const;

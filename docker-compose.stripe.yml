@@ -1,0 +1,8 @@
+# Liga o Stripe DE VERDADE (modo de teste) na API local — roteiro da P07 em docs/roteiro-stripe.md (ADR-011).
+#   docker compose -f docker-compose.yml -f docker-compose.stripe.yml up -d --build api
+# As chaves ficam em .env.stripe (fora do git — .gitignore). Sem esse arquivo, o compose normal usa o simulador.
+services:
+  api:
+    env_file: .env.stripe
+    environment:
+      PAGAMENTOS: stripe

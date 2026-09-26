@@ -82,6 +82,9 @@ describe('formato HTTP (T05)', () => {
   });
 });
 
+// Produção exige o Stripe (ADR-011, REQ-ASS-07) — testado em assinaturas-config.spec; aqui só completa o ambiente
+const STRIPE = { PAGAMENTOS: 'stripe', STRIPE_SECRET_KEY: 'sk_live_x1', STRIPE_WEBHOOK_SECRET: 'whsec_x1', STRIPE_PRICE_ID: 'price_x1', SITE_URL: 'https://sisfin.example.com' };
+
 describe('configuração no boot (T05)', () => {
   it('recusa JWT_SECRET ausente ou com menos de 32 bytes', () => {
     expect(() => lerConfig({ JWT_SECRET: 'curto' })).toThrow(ConfigInvalidaError);
@@ -89,10 +92,10 @@ describe('configuração no boot (T05)', () => {
   });
   it('recusa segredo de exemplo/desenvolvimento em produção', () => {
     expect(() => lerConfig({ NODE_ENV: 'production', JWT_SECRET: 'sisfin-api-segredo-local-de-desenvolvimento-nao-usar-em-producao' })).toThrow(/exemplo/);
-    expect(lerConfig({ NODE_ENV: 'production', JWT_SECRET: 'k3v9$Qz!pX7wL2mN8rT4yB6cH1dF5gJ0s', ASSETS_URL: 'https://sisfin.example.com' }).ambiente).toBe('production');
+    expect(lerConfig({ ...STRIPE, NODE_ENV: 'production', JWT_SECRET: 'k3v9$Qz!pX7wL2mN8rT4yB6cH1dF5gJ0s', ASSETS_URL: 'https://sisfin.example.com' }).ambiente).toBe('production');
   });
   it('ASSETS_URL (REQ-CBA-07): obrigatória e http(s) em produção; padrão local fora dela; sem barra final', () => {
-    const producao = { NODE_ENV: 'production', JWT_SECRET: 'k3v9$Qz!pX7wL2mN8rT4yB6cH1dF5gJ0s' };
+    const producao = { ...STRIPE, NODE_ENV: 'production', JWT_SECRET: 'k3v9$Qz!pX7wL2mN8rT4yB6cH1dF5gJ0s' };
     expect(() => lerConfig(producao)).toThrow(/ASSETS_URL/);
     expect(() => lerConfig({ ...producao, ASSETS_URL: 'javascript:alert(1)' })).toThrow(/ASSETS_URL/);
     expect(() => lerConfig({ ...producao, ASSETS_URL: 'https://a.com/x?y=1' })).toThrow(/ASSETS_URL/);

@@ -1,5 +1,7 @@
 node_modules/
 .env
+# Chaves de TESTE do Stripe (roteiro da P07 — docs/roteiro-stripe.md). Nunca versionar.
+.env.stripe
 docker/legacy/.env.local
 
 # Relatórios do ETL com dados reais (só o do seed fictício vai para docs/relatorios/)

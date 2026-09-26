@@ -7,7 +7,7 @@ const aplicar = (op: string, args: any) => aplicarTenant('BillPay', op, args, CL
 describe('regras de tenant (T07)', () => {
   it('lista fechada de modelos com tenant', () => {
     expect([...MODELOS_COM_TENANT].sort()).toEqual(
-      ['BankAccount', 'BillPay', 'BillReceive', 'CategoryExpense', 'CategoryRevenue', 'Statement'].sort(),
+      ['BankAccount', 'BillPay', 'BillReceive', 'CategoryExpense', 'CategoryRevenue', 'Statement', 'Subscription'].sort(),
     );
   });
 

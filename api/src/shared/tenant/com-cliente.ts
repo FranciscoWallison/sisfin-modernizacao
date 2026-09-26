@@ -12,6 +12,7 @@ import {
 import { Observable } from 'rxjs';
 import type { RequisicaoComContexto } from '../auth-compat/contexto';
 import { JwtAuthGuard } from '../auth-compat/jwt-auth.guard';
+import { AssinaturaGuard } from './assinatura.guard';
 import { ContextoCliente } from './contexto-cliente';
 
 /** Usuário autenticado SEM cliente → 403 determinístico (RN-CON-019 → REQ-CON-13; legado respondia 500). */
@@ -35,6 +36,13 @@ export class ClienteInterceptor implements NestInterceptor {
   }
 }
 
-/** Rota autenticada e restrita ao cliente do usuário (cliente resolvido pelo `sub` no banco, nunca do token). */
-export const ComCliente = () =>
-  applyDecorators(UseGuards(JwtAuthGuard, ClienteObrigatorioGuard), UseInterceptors(ClienteInterceptor));
+/**
+ * Rota autenticada e restrita ao cliente do usuário (cliente resolvido pelo `sub` no banco, nunca do token). Passa
+ * também pelo gate de assinatura (desligado por padrão — REQ-ASS-05), exceto as rotas da própria assinatura
+ * (`semAssinatura`), senão quem não assinou não conseguiria assinar.
+ */
+export const ComCliente = (opcoes: { semAssinatura?: boolean } = {}) =>
+  applyDecorators(
+    UseGuards(JwtAuthGuard, ClienteObrigatorioGuard, ...(opcoes.semAssinatura ? [] : [AssinaturaGuard])),
+    UseInterceptors(ClienteInterceptor),
+  );

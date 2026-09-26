@@ -994,6 +994,57 @@ Vue 3**.
 **Próximo passo:** Francisco decide as DUV-ADB-001..006 (ADR-010) e aprova com
 `node tools/aprovar-tasks.mjs admin-bancos "Francisco"`.
 
+## Etapa 25 — Módulo `admin-bancos`: implementação (A01–A06) · 26/09/2026
+
+**Aprovação:** Francisco aprovou o plano (hash `bb0f9a303b2e`), aceitando o ADR-010 e as DUV-ADB-001..006.
+
+- **A01–A03 — API `/api/admin/banks`, só admin:**
+  - 401 sem token; 403 para cliente **antes** de o upload ser lido (os guards rodam antes do interceptor);
+  - o logo é decidido pela **assinatura dos bytes**, não pela extensão nem pelo Content-Type; SVG recusado;
+  - ordem arquivo novo → banco → remoção do antigo; se o banco falha, o arquivo novo sai; o `default.jpg` e o logo que
+    outro banco usa nunca são removidos;
+  - a linha do banco é travada na edição e na exclusão; "em uso" é global (conta de qualquer cliente), por isso vai em
+    SQL cru. O sensor de arquitetura acusou, e a exceção "só `users`" virou um mapa **por arquivo e por tabela**.
+    Mutação: com `bill_pays` na consulta, volta a acusar.
+  - Mutações nos testes de integração: sem a limpeza do novo, sem a checagem de compartilhado, sem a remoção do antigo
+    e com o guard deixando passar, cada uma derruba teste. As duas que a integração não pegou (tamanho e nome
+    removível) o unitário do domínio pega.
+- **A04 — servir e migrar:**
+  - volume `arquivos`: API em leitura e escrita, nginx em só leitura; `ASSETS_URL` na `:8083`; ausente → imagem padrão;
+  - a API passou a rodar como `node` (não root), e o volume nasce com esse dono;
+  - `curl` de aceite: um PNG enviado como `x.html`/`text/html` foi gravado `.png` e servido `image/png`;
+  - `tools/migrar-logos.mjs`: no seed, relata os 3 logos que nunca existiram (RN-ADB-007);
+  - o espelho normaliza a origem nova dos logos: 20/20 logo após o ETL.
+- **A05 — telas no `web/`:** lista, novo, editar, excluir; link em "Minha conta" só para admin. A tela de edição
+  precisava de `GET /api/admin/banks/:id`, que o design não previa: entrou com testes e está nas mudanças após a
+  aprovação do design (o `tasks.md` aprovado não muda). E2E com um PNG **decodificável** (o fixture de 16 bytes da
+  API só tem a assinatura).
+- **A06 — revisão de segurança** (`docs/revisoes/2026-09-26-security-admin-bancos.md`):
+  - **S1 (média):** o nome do banco vira HTML **sem escape** no autocomplete do app antigo (Vue 1, sem CSP, mesma origem
+    do token). `legacy/` não se edita; a barreira ficou na única porta de escrita: o nome recusa `< > " '`.
+  - **S2:** o `migrar-logos` copiava qualquer conteúdo e seguia link simbólico; agora confere extensão e assinatura e
+    copia o conteúdo lido. O teste do link é pulado no Windows e foi conferido num contêiner Linux, com mutação.
+  - **S3:** dois bancos com o mesmo arquivo trocando ao mesmo tempo deixavam o arquivo órfão (o teste reproduziu).
+    Trava consultiva por nome de arquivo.
+  - **S4:** o erro do multer ecoava o nome do campo; agora é mensagem fixa.
+  - **Tropeço:** o 1º vermelho de S3 e S4 foi **429**, não a falha: a suíte passou de 60 requisições por minuto. Com o
+    limite folgado só nessa suíte, refiz a prova por mutação e as três correções mordem sem 429 nenhum.
+- **Fechamento, e dois sensores que envelheceram:**
+  - A paridade no legado falhou com `-15.000000000000028` × `-15`: a subtração em JS de saldos grandes do oráculo.
+    Os deltas passaram a ser comparados em centavos, a mesma regra do espelho (ADR-003).
+  - O RN-CAT-001 falha **nos dois alvos** igualmente. Conferi no MySQL: a sequência de receitas passou a de despesas, e
+    a despesa que o caso cria (379) tem o mesmo id de uma receita do mesmo cliente, então "pai de outra árvore" vira
+    pai válido. Não é regressão (na CI o oráculo nasce limpo). Fica como pendência, com o diagnóstico.
+- **Números:** API 389 testes (+54); web 24 unitários + 11 E2E; espelho 20/20; paridade 23/24 nos dois alvos (o
+  RN-CAT-001 acima).
+
+**Pendências:**
+- ETL relatar nomes de banco com `< > " '` (a barreira do S1 vale para o que entra pela API);
+- varredura de arquivos órfãos no volume (queda entre gravar o arquivo e o commit);
+- RN-CAT-001 independente do acúmulo do oráculo;
+- CSP do `/app`, `trust proxy`, confirmação de e-mail; DUV-CAT-004/007 e DUV-FLX-005;
+- módulo restante: assinaturas (Iugu) — decidir entre sandbox da Iugu e simulador.
+
 ---
 
 ## Lições até aqui
@@ -1038,3 +1089,9 @@ Vue 3**.
     caminho das views) — que também é fato do legado em produção Linux, mas escondia as regras de verdade.
 26. **Sensor que depende do volume de dados envelhece.** Um caso que procurava o registro novo numa lista limitada
     passou a falhar depois de dezenas de rodadas; a ordenação decrescente o tornou independente do acúmulo.
+27. **Um vermelho só conta se for pelo motivo certo.** Os primeiros vermelhos de dois achados eram o limite de
+    requisições, não a falha. Mutação depois da correção é o que prova que o teste pega o defeito.
+28. **Quando o defeito está no código que não se pode editar, a barreira vai na porta de escrita.** O legado injeta o
+    nome do banco em HTML sem escapar; o sistema novo é a única via para gravar esse nome, e é lá que ele é validado.
+29. **Sequências independentes colidem com o tempo.** Um caso que usava "um id de outra tabela" como pai inválido
+    passou a acertar um id válido quando uma sequência ultrapassou a outra.

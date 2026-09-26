@@ -30,6 +30,12 @@ const filtros = args.filter((a, i) => !a.startsWith('--') && !valoresDeOpcao.has
 const walk = (d) =>
   readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirectory() ? walk(join(d, f)) : [join(d, f)]));
 
+// Delta de dinheiro em centavos (ADR-003, a mesma regra do espelho): com saldos grandes no oráculo, a própria
+// subtração em JS dá -15.000000000000028. Só o ruído (< 1e-6 de um valor em centavos) é absorvido; qualquer outro
+// número é comparado como veio.
+const centavos = (v) =>
+  typeof v === 'number' && !Number.isInteger(v) && Math.abs(v - Math.round(v * 100) / 100) < 1e-6 ? Math.round(v * 100) / 100 : v;
+
 // "data.0.id" → valor; "" → o corpo inteiro
 const pegar = (obj, caminho) =>
   caminho === '' ? obj : caminho.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
@@ -84,9 +90,9 @@ async function executar(caso) {
       if (passo.caminho) resultado[passo.nome].corpo = projetar(pegar(corpo, passo.caminho), passo.campos);
     }
   }
-  // Afirmações derivadas: expressões JS sobre as variáveis salvas (ex.: deltas de saldo)
+  // Afirmações derivadas: expressões JS sobre as variáveis salvas (ex.: deltas de saldo), em centavos (ver centavos)
   for (const [nome, expr] of Object.entries(caso.derivar ?? {})) {
-    resultado[nome] = Function(...Object.keys(vars), `return (${expr});`)(...Object.values(vars));
+    resultado[nome] = centavos(Function(...Object.keys(vars), `return (${expr});`)(...Object.values(vars)));
   }
   return resultado;
 }

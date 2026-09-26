@@ -1,4 +1,4 @@
-Status: rascunho
+Status: aprovado · Aprovado por: Francisco · Em: 2026-09-26 · Hash: bb0f9a303b2e
 
 # Tasks — módulo `admin-bancos`
 

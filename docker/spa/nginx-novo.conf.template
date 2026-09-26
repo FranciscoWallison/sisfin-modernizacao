@@ -30,6 +30,24 @@ server {
     location /app/ { try_files $uri /app/index.html; }
     location ~ ^/(build|css|fonts|img)/ { try_files $uri =404; }
 
+    # Logos dos bancos (ADR-010): o volume de arquivos (só leitura) no MESMO caminho do legado. ^~ para nenhuma
+    # location de regex tomar a frente. O volume só recebe PNG/JPEG/WebP validados pela API; mesmo assim, nada aqui
+    # executa: nosniff (snippet) + CSP que bloqueia tudo e isola a resposta aberta direto na aba.
+    location ^~ /storage/banks/imagens/ {
+        root /srv;
+        include /etc/nginx/snippets/seguranca.conf;
+        add_header Content-Security-Policy "default-src 'none'; sandbox" always;
+        try_files $uri @logo_padrao;
+    }
+    # Arquivo ausente (logos do legado que nunca existiram — RN-ADB-007) → imagem padrão, não imagem quebrada
+    location @logo_padrao {
+        root /usr/share/nginx/html/web;
+        include /etc/nginx/snippets/seguranca.conf;
+        add_header Content-Security-Policy "default-src 'none'; sandbox" always;
+        add_header Cache-Control "no-cache" always;
+        try_files /banco-padrao.svg =404;
+    }
+
     # O site novo (Vue 3, history mode): CSP estrita — sem inline, sem eval, só a própria origem e a API
     location /assets/ {
         root /usr/share/nginx/html/web;

@@ -1,9 +1,9 @@
-Status: rascunho — aguardando aprovação do Francisco
+Status: aprovado — Francisco, 26/09/2026 (com o plano, hash bb0f9a303b2e). Mudanças posteriores no fim do arquivo.
 
 # Requirements — módulo `admin-bancos` — TO-BE
 
 > Gerado de `.specs/legado/modulos/admin-bancos/regras.md` (RN-ADB-001..007) e `duvidas.md` (DUV-ADB-001..007).
-> Decisões: ADR-010 (proposto). Aceite: integração (API + banco + volume) e E2E das telas; `GET /api/banks` segue na
+> Decisões: ADR-010 (aceito). Aceite: integração (API + banco + volume) e E2E das telas; `GET /api/banks` segue na
 > paridade de `contas-bancarias`.
 
 ### REQ-ADB-01 — Listagem para o admin

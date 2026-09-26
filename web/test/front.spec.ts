@@ -1,7 +1,9 @@
 // S03–S05 — partes puras do front novo: erros da API → tela, sessão compartilhada com o app, token fora da URL.
 import { describe, expect, it, vi } from 'vitest';
 import { chamar, interpretarErro } from '../src/api';
-import { CHAVE_TOKEN, CHAVE_USUARIO, entrar, sair } from '../src/sessao';
+import { createMemoryHistory, createRouter } from 'vue-router';
+import { rotas } from '../src/rotas';
+import { acessoAdmin, CHAVE_TOKEN, CHAVE_USUARIO, entrar, sair } from '../src/sessao';
 import { removerTokenDaUrl, semToken } from '../src/token-na-url';
 
 const resposta = (status: number, corpo: unknown) => new Response(corpo === undefined ? '' : JSON.stringify(corpo), { status });
@@ -82,5 +84,43 @@ describe('token fora da URL (REQ-SIT-06 / DUV-SIT-003)', () => {
     const janela = { location: { href: 'http://h/my-financial?token=abc' }, history: { state: null, replaceState } } as unknown as Window;
     expect(removerTokenDaUrl(janela)).toBe(true);
     expect(replaceState).toHaveBeenCalledWith(null, '', '/my-financial');
+  });
+});
+
+describe('admin de bancos (A05, ADR-010)', () => {
+  it('upload: FormData vai como está, SEM Content-Type (o navegador põe o multipart com boundary)', async () => {
+    const f = vi.fn(async () => resposta(201, { data: {} }));
+    const corpo = new FormData();
+    corpo.append('name', 'Banco');
+    await chamar('POST', '/admin/banks', { corpo, token: 't', base: 'http://api', fetch: f as unknown as typeof fetch });
+    const [, init] = f.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.body).toBe(corpo);
+    expect((init.headers as Record<string, string>)['Content-Type']).toBeUndefined();
+    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer t');
+  });
+
+  it.each([
+    [null, null, 'login'],
+    ['t', JSON.stringify({ role: 'client' }), 'negado'],
+    ['t', '{quebrado', 'negado'],
+    ['t', null, 'negado'],
+    ['t', JSON.stringify({ role: 'admin' }), 'ok'],
+  ])('acesso às telas de admin: token=%s user=%s → %s', (token, usuario, esperado) => {
+    localStorage.clear();
+    if (token) localStorage.setItem(CHAVE_TOKEN, token);
+    if (usuario) localStorage.setItem(CHAVE_USUARIO, usuario);
+    expect(acessoAdmin()).toBe(esperado);
+  });
+
+  it.each([
+    ['/admin/banks', '/admin/banks'],
+    ['/admin/banks/novo', '/admin/banks/novo'],
+    ['/admin/banks/7', '/admin/banks/:id(\\d+)'],
+    ['/admin/banks/abc', '/:caminho(.*)*'],
+    ['/admin/register', '/:caminho(.*)*'],
+    ['/admin/password/reset', '/:caminho(.*)*'],
+  ])('rota %s → %s (cadastro e recuperação do /admin não migrados — REQ-ADB-02, 07)', (url, rota) => {
+    const router = createRouter({ history: createMemoryHistory(), routes: rotas });
+    expect(router.resolve(url).matched.at(-1)?.path).toBe(rota);
   });
 });

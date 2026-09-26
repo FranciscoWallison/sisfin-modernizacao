@@ -75,10 +75,13 @@ services:
       # Só desenvolvimento local. Diferente do segredo do legado (ADR-005): tokens não são intercambiáveis
       JWT_SECRET: sisfin-api-segredo-local-de-desenvolvimento-nao-usar-em-producao
       CORS_ORIGINS: http://localhost:8081,http://localhost:8083
-      # Base dos links de logo dos bancos (REQ-CBA-07): os arquivos moram no storage do legado durante o strangler
-      ASSETS_URL: http://localhost:8081
+      # Base dos links de logo dos bancos (REQ-CBA-07): o nginx da :8083 serve o volume de arquivos (ADR-010)
+      ASSETS_URL: http://localhost:8083
+      # Volume de arquivos: a API grava os logos em banks/imagens (admin de bancos — ADR-010)
+      ARQUIVOS_DIR: /data/arquivos
       # Local: o E2E cadastra a cada execução; em produção vale o padrão (5 por IP por hora — S3)
       CADASTROS_POR_HORA: "200"
+    volumes: [arquivos:/data/arquivos]
 
   # A MESMA tela do legado (SPA Vue 1 compilado de legacy/) servida duas vezes — só muda a API por trás.
   # É o Strangler Fig visível: o front não sabe qual backend atende.
@@ -106,9 +109,12 @@ services:
     environment:
       # Origem da API na CSP do site novo (connect-src) — docker/spa/snippets/csp-site.inc.template
       API_ORIGEM: http://localhost:3300
+    # Os logos que a API grava, servidos em /storage/banks/imagens/ — só leitura para o nginx (ADR-010)
+    volumes: [arquivos:/srv/storage:ro]
     depends_on: [api]
     ports: ["8083:80"]
 
 volumes:
   legacy-db:
   api-db:
+  arquivos:

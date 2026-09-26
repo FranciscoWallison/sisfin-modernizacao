@@ -1,6 +1,6 @@
 # ADR-010 — Admin de bancos: API de admin + telas no `web/`, com a criação e a edição que nunca funcionaram
 
-- **Status:** proposto — aguardando aprovação do Francisco
+- **Status:** aceito — aprovado — Francisco, 26/09/2026 (com o plano, hash bb0f9a303b2e)
 - **Data:** 26/09/2026
 
 ## Contexto

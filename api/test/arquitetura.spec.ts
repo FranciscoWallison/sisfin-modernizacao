@@ -5,8 +5,18 @@ import { join, relative } from 'node:path';
 
 const raiz = join(__dirname, '..');
 
-/** Arquivos que podem ter SQL cru SEM clientId — e apenas sobre a tabela `users` (ver o teste de SQL cru abaixo). */
-const EXCECOES_SQL_SO_USERS = ['src/shared/auth-compat/usuarios.repositorio.ts', 'src/modules/cadastro/infra/cadastro.repositorio.ts'];
+/**
+ * Arquivos que podem ter SQL cru SEM clientId — e apenas sobre as tabelas listadas (ver o teste de SQL cru abaixo):
+ * - `users` (revisão de segurança do site, S1): igualdade de e-mail sem diferenciar maiúsculas precisa de
+ *   lower(email) = lower($1) — o `mode: 'insensitive'` do Prisma vira ILIKE sem escape. `users` é a raiz do tenant;
+ * - `banks` + `bank_accounts` (admin de bancos, ADR-010): trava a linha do banco e testa se QUALQUER conta usa o
+ *   banco (EXISTS, sem devolver dado de cliente) — `banks` não tem tenant e a rota é só de admin.
+ */
+const EXCECOES_SQL: Record<string, string[]> = {
+  'src/shared/auth-compat/usuarios.repositorio.ts': ['users'],
+  'src/modules/cadastro/infra/cadastro.repositorio.ts': ['users'],
+  'src/modules/admin-bancos/infra/bancos.repositorio.ts': ['banks', 'bank_accounts'],
+};
 const depcruise = (alvo: string) =>
   spawnSync('npx', ['depcruise', alvo, '--config', '.dependency-cruiser.cjs', '--output-type', 'err-long'], {
     cwd: raiz,
@@ -45,12 +55,12 @@ describe('arquitetura (T02)', () => {
         .replace(/(^|[^:])\/\/.*$/gm, '$1');
       if (!/\$(queryRaw|executeRaw)(Unsafe)?\b/.test(fonte)) continue;
       if (/\$(queryRaw|executeRaw)Unsafe\b/.test(fonte)) problemas.push(`${rel}: *Unsafe é proibido (injeção de SQL)`);
-      // Exceção ESTREITA (revisão de segurança do site, S1): igualdade de e-mail sem diferenciar maiúsculas precisa de
-      // lower(email) = lower($1) — o `mode: 'insensitive'` do Prisma vira ILIKE sem escape. A tabela `users` não tem
-      // tenant (é a raiz dele). Só vale se TODO o SQL cru do arquivo tocar apenas `users`.
-      if (EXCECOES_SQL_SO_USERS.includes(rel)) {
+      // Exceção ESTREITA (ver EXCECOES_SQL): só vale se TODO o SQL cru do arquivo tocar apenas as tabelas permitidas.
+      const permitidas = EXCECOES_SQL[rel];
+      if (permitidas) {
         const tabelas = [...fonte.matchAll(/\b(?:FROM|JOIN|UPDATE|INTO)\s+"?(\w+)"?/gi)].map((m) => m[1].toLowerCase());
-        if (!tabelas.length || tabelas.some((t) => t !== 'users')) problemas.push(`${rel}: exceção só para SQL cru em "users" (achou: ${tabelas.join(', ')})`);
+        if (!tabelas.length || tabelas.some((t) => !permitidas.includes(t)))
+          problemas.push(`${rel}: exceção só para SQL cru em ${permitidas.join(', ')} (achou: ${tabelas.join(', ')})`);
         continue;
       }
       if (!/\/infra\//.test(rel)) problemas.push(`${rel}: SQL cru fora de infra/ — mova para um repositório em infra/`);

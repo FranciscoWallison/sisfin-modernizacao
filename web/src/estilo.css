@@ -14,4 +14,9 @@ input[aria-invalid='true'] { border-color: var(--erro); }
 .erro-geral { color: var(--erro); margin: 12px 0 0; }
 button, .botao { display: inline-block; margin-top: 16px; padding: 10px 16px; border: 0; border-radius: 4px; background: var(--cor); color: #fff; font-size: 1rem; cursor: pointer; text-decoration: none; }
 button[disabled] { opacity: 0.6; cursor: wait; }
+.tabela { width: 100%; border-collapse: collapse; margin-top: 12px; }
+.tabela th, .tabela td { padding: 6px 4px; border-bottom: 1px solid #e0e0e0; text-align: left; vertical-align: middle; }
+.tabela img, .logo-atual img { object-fit: contain; vertical-align: middle; }
+.tabela .acoes button { margin-top: 0; padding: 6px 10px; font-size: 0.9rem; }
+button.perigo { background: var(--erro); }
 .acoes { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }

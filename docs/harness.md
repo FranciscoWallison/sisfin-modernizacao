@@ -21,7 +21,7 @@ não depende de alguém escrever os testes certos: ele compara com a realidade (
 | Legado somente leitura | guia computacional | — | `deny: Edit(/legacy/**)` + hook `antes-de-editar` | ✅ |
 | Aprovação amarrada ao hash | guia computacional | — | `tools/aprovar-tasks.mjs` + hook `antes-de-editar` | ✅ |
 | Oráculo reproduzível | infraestrutura | comportamento | `docker-compose.yml` + `DeterministicSeeder` | ✅ |
-| Golden master | sensor computacional | comportamento | `tools/paridade.mjs` + `.specs/paridade/` | ✅ 8 casos |
+| Golden master | sensor computacional | comportamento | `tools/paridade.mjs` + `.specs/paridade/` — deltas de dinheiro comparados em centavos (ADR-003; etapa 25: a subtração em JS de saldos grandes dava `-15.000000000000028`) | ✅ 24 casos |
 | Observabilidade do oráculo | sensor computacional | comportamento | `tools/oraculo-sql.mjs` | ✅ |
 | **Espelho de leitura** | sensor computacional | comportamento | `tools/espelho.mjs` — logo após o ETL, cada GET tem de responder **igual** (valores) no legado e no novo, usando as URLs do **tráfego real** do SPA | ✅ 20/20 rotas (etapa 19: + `/api/banks` e `/api/bank_accounts/{id}?include=bank`) |
 | **Tráfego real do front** | guia/oráculo | comportamento | `.specs/legado/trafego-spa.md` — chamadas capturadas com Playwright em cada tela do SPA antigo | ✅ 9 telas |
@@ -45,6 +45,7 @@ node tools/paridade.mjs                              # golden master contra o le
 node tools/paridade.mjs --base http://localhost:3300 --alvo novo  # contra o novo, com divergências aprovadas (ADR)
 node tools/oraculo-sql.mjs PUT /api/bill_pays/12 '{…}' # SQL que a requisição dispara no legado
 node tools/migrar-dados.mjs && node tools/espelho.mjs  # ETL e comparação de leituras legado × novo
+node tools/migrar-logos.mjs --origem <dir>           # logos do legado → volume de arquivos da API (ADR-010)
 node tools/reparar-oraculo.mjs                        # desfaz, pela API, o estrago de propósito dos casos RN-CAT-003/009
                                                       # (rode depois da paridade no legado e antes do ETL)
 node tools/rastreabilidade.mjs                       # RN → REQ → Task → Paridade

@@ -42,7 +42,7 @@ jobs:
           node-version: 22
 
       - name: Testes do próprio harness (hooks, aprovação por hash)
-        run: node --test tools/testes/harness.test.mjs
+        run: node --test tools/testes/harness.test.mjs tools/testes/migrar-logos.test.mjs
 
       - name: Rastreabilidade RN → REQ → Task → Paridade (estrita)
         run: node tools/rastreabilidade.mjs --strict
@@ -66,6 +66,12 @@ jobs:
       - name: Migração de dados (ETL legado → novo)
         run: node tools/migrar-dados.mjs
 
+      - name: Logos dos bancos para o volume de arquivos (ADR-010 — no seed, relata os 3 ausentes)
+        run: |
+          mkdir -p /tmp/logos-legado
+          docker compose cp legacy-app:/var/www/html/storage/app/public/banks/imagens/. /tmp/logos-legado/ || true
+          node tools/migrar-logos.mjs --origem /tmp/logos-legado
+
       - name: Espelho de leitura (logo após o ETL — GETs idênticos em valores)
         run: node tools/espelho.mjs
 
@@ -87,7 +93,7 @@ jobs:
           # outra lança contas no mesmo mês (flakiness observada ao entrarem as suítes de categorias/contas-bancarias)
           npx jest --runInBand
 
-      - name: Site novo — E2E no navegador (cadastro, login, token fora da URL — ADR-009)
+      - name: Site novo — E2E no navegador (cadastro, login, token fora da URL — ADR-009; admin de bancos — ADR-010)
         # Chrome já instalado no runner (channel: 'chrome'); os testes unitários do web/ rodam no build da imagem
         working-directory: web
         run: |

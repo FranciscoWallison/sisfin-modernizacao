@@ -24,21 +24,24 @@ export function interpretarErro(status: number, corpo: unknown): { campos: Erros
 }
 
 export async function chamar<T>(
-  metodo: 'GET' | 'POST',
+  metodo: 'GET' | 'POST' | 'PUT' | 'DELETE',
   caminho: string,
   opcoes: { corpo?: unknown; token?: string | null; base?: string; fetch?: typeof fetch } = {},
 ): Promise<Resultado<T>> {
   const base = opcoes.base ?? import.meta.env.VITE_API_URL;
   const f = opcoes.fetch ?? fetch;
+  // FormData (upload do logo — admin de bancos): o navegador monta o multipart e o Content-Type com o boundary
+  const multipart = opcoes.corpo instanceof FormData;
+  const json = opcoes.corpo !== undefined && !multipart;
   const r = await f(`${base}${caminho}`, {
     method: metodo,
     headers: {
       Accept: 'application/json',
-      ...(opcoes.corpo !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      ...(json ? { 'Content-Type': 'application/json' } : {}),
       // o token vai SEMPRE no cabeçalho, nunca na URL (REQ-SIT-06)
       ...(opcoes.token ? { Authorization: `Bearer ${opcoes.token}` } : {}),
     },
-    body: opcoes.corpo !== undefined ? JSON.stringify(opcoes.corpo) : undefined,
+    body: multipart ? (opcoes.corpo as FormData) : json ? JSON.stringify(opcoes.corpo) : undefined,
   });
   const texto = await r.text();
   let corpo: unknown = null;

@@ -1,8 +1,8 @@
-Status: rascunho — aguardando aprovação do Francisco
+Status: aprovado — Francisco, 26/09/2026 (com o plano, hash bb0f9a303b2e). Mudanças posteriores no fim do arquivo.
 
 # Design — módulo `admin-bancos` — TO-BE
 
-> Implementa `requirements.md` (REQ-ADB-01..07). Decisões: ADR-010 (proposto). Segue o caminho do ADR-009 (API +
+> Implementa `requirements.md` (REQ-ADB-01..07). Decisões: ADR-010 (aceito). Segue o caminho do ADR-009 (API +
 > `web/`, login único por JWT).
 
 ## 1. API (`api/src/modules/admin-bancos/`)
@@ -73,3 +73,17 @@ http/
 | Upload virar vetor (arquivo malicioso servido na origem do app) | Só 3 tipos por assinatura; SVG recusado; nome gerado; `nosniff`; CSP; volume só-leitura no nginx |
 | Arquivo órfão no volume | Ordem arquivo → banco → remoção do antigo; falha remove o novo; teste |
 | Logos antigos ausentes no cutover | `migrar-logos` relata; a imagem padrão cobre a tela |
+
+## Mudanças após a aprovação (implementação, 26/09/2026)
+
+| Mudança | Por quê |
+|---|---|
+| `GET /api/admin/banks/:id` (só admin) | A tela de edição precisa do banco; a lista paginada não serve para abrir um id direto (A05) |
+| nginx com `root /srv` e o volume montado em `/srv/storage` (em vez de `alias`) + `@logo_padrao` | `try_files` com `alias` tem armadilhas conhecidas; a imagem padrão sai do build do `web/` (`/usr/share/nginx/html/web/banco-padrao.svg`), não de uma URL que cairia no SPA |
+| CSP `default-src 'none'; sandbox` nas respostas de `/storage/banks/imagens/` | Um arquivo aberto direto na aba não executa nada, mesmo que algo inesperado chegue ao volume |
+| Trava da linha do banco (`FOR UPDATE`) na edição e na exclusão | Duas edições do mesmo banco não removem o logo uma da outra |
+| `name` recusa `< > " '` (422) | Revisão de segurança S1: o app antigo interpola o nome em HTML sem escapar |
+| `pg_advisory_xact_lock(logoDeBanco, hashtext(logo))` antes de decidir remover um logo | Revisão de segurança S3: bancos diferentes com o mesmo arquivo |
+| Erros 400 do multer com mensagem fixa | Revisão de segurança S4 |
+| `migrar-logos` confere extensão e assinatura, recusa link simbólico e corrige dono/modo | Revisão de segurança S2 e S5 |
+| API roda como `node` (não root) | O volume nasce com o dono certo; hardening |

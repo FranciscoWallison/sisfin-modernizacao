@@ -35,6 +35,7 @@ async function encerrar() {
     <p v-else>Carregando…</p>
     <div class="acoes">
       <a :href="URL_DO_APP" class="botao">Ir para o app</a>
+      <RouterLink v-if="usuario?.role === 'admin'" to="/admin/banks" class="botao">Administração de bancos</RouterLink>
       <button type="button" @click="encerrar">Sair</button>
     </div>
   </section>

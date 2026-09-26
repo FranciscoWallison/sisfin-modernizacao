@@ -14,6 +14,7 @@ export interface Usuario {
   name: string;
   email: string;
   client_id: number;
+  role?: string;
   [outros: string]: unknown;
 }
 
@@ -30,6 +31,21 @@ export async function entrar(token: string, opcoes: { armazenamento?: Storage; f
   }
   armazenamento.setItem(CHAVE_USUARIO, JSON.stringify(r.dados));
   return true;
+}
+
+/**
+ * Telas de admin (ADR-010): sem token → login; usuário que não é admin → acesso negado. É só a experiência da tela:
+ * quem protege de fato é a API (403). O usuário vem do localStorage gravado por entrar().
+ */
+export function acessoAdmin(armazenamento: Storage = localStorage): 'login' | 'negado' | 'ok' {
+  if (!tokenAtual(armazenamento)) return 'login';
+  let usuario: Partial<Usuario> | null = null;
+  try {
+    usuario = JSON.parse(armazenamento.getItem(CHAVE_USUARIO) ?? 'null');
+  } catch {
+    usuario = null;
+  }
+  return usuario?.role === 'admin' ? 'ok' : 'negado';
 }
 
 /** Apaga a sessão local (o logout na API — blacklist do token — é chamado antes, pela página). */

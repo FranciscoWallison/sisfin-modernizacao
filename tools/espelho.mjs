@@ -11,16 +11,18 @@ const args = process.argv.slice(2);
 const opcao = (nome, padrao) => (args.includes(nome) ? args[args.indexOf(nome) + 1] : padrao);
 const LEGADO = opcao('--legado', 'http://localhost:8081');
 const NOVO = opcao('--novo', 'http://localhost:3300');
+// Os logos do novo saem pelo nginx da :8083 (ASSETS_URL — ADR-010); os do legado, pelo próprio legado
+const ARQUIVOS_NOVO = opcao('--arquivos-novo', 'http://localhost:8083');
 
 const legado = criarCliente(LEGADO);
 const novo = criarCliente(NOVO);
 
-// Links de paginação trazem o host de cada sistema
+// Links de paginação e de logo trazem o host de cada sistema
 // Dinheiro em centavos (RN-CON-011 / ADR-003): o legado soma DOUBLE e devolve ruído de ponto flutuante
 // (8948.720000000001); o novo usa DECIMAL (8948.72). Só o ruído é absorvido: número que NÃO está a menos de 1e-6 de
 // um valor em centavos continua comparado como veio.
 const centavos = (_k, v) => (typeof v === 'number' && !Number.isInteger(v) && Math.abs(v - Math.round(v * 100) / 100) < 1e-6 ? Math.round(v * 100) / 100 : v);
-const normalizar = (valor) => JSON.parse(JSON.stringify(valor).replaceAll(LEGADO, '<base>').replaceAll(NOVO, '<base>'), centavos);
+const normalizar = (valor) => JSON.parse(JSON.stringify(valor).replaceAll(LEGADO, '<base>').replaceAll(NOVO, '<base>').replaceAll(ARQUIVOS_NOVO, '<base>'), centavos);
 
 function diferencas(a, b, caminho = '$', saida = []) {
   if (isDeepStrictEqual(a, b)) return saida;

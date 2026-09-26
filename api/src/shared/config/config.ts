@@ -1,3 +1,5 @@
+import { isAbsolute } from 'node:path';
+
 // Configuração lida e VALIDADA no boot: a API não sobe com configuração insegura (design §8, §10; REQ-CON-13).
 export interface Config {
   ambiente: string;
@@ -10,6 +12,8 @@ export interface Config {
   urlArquivos: string;
   /** Cadastros públicos por IP por hora (revisão de segurança do site, S3). Padrão 5; o compose local usa mais. */
   cadastrosPorHora: number;
+  /** Diretório dos arquivos enviados (logos dos bancos em banks/imagens) — ADR-010. Caminho absoluto. */
+  arquivosDir: string;
 }
 
 export class ConfigInvalidaError extends Error {}
@@ -38,6 +42,10 @@ export function lerConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (!Number.isInteger(cadastrosPorHora) || cadastrosPorHora < 1 || cadastrosPorHora > 10_000) {
     throw new ConfigInvalidaError('CADASTROS_POR_HORA inválido: inteiro de 1 a 10000 (limite de cadastros públicos por IP por hora).');
   }
+  const arquivosDir = env.ARQUIVOS_DIR ?? '/data/arquivos';
+  if (!isAbsolute(arquivosDir)) {
+    throw new ConfigInvalidaError('ARQUIVOS_DIR inválido: informe um caminho absoluto (ex.: /data/arquivos).');
+  }
   return {
     ambiente,
     porta: Number(env.PORT ?? 3000),
@@ -48,5 +56,6 @@ export function lerConfig(env: NodeJS.ProcessEnv = process.env): Config {
     origensCors: (env.CORS_ORIGINS ?? '').split(',').map((o) => o.trim()).filter(Boolean),
     urlArquivos,
     cadastrosPorHora,
+    arquivosDir,
   };
 }

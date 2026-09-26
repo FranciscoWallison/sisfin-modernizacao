@@ -94,6 +94,7 @@ Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios 
 | contas-bancarias (escrita + bancos) | ✅ 9 regras, 5 dúvidas, contrato | ✅ 4 casos | ✅ aprovado (ADR-007, hash `547b3519e39d`) | ✅ **migrado** — paridade 4/4; espelho 20/20; telas de criar e editar funcionando — ver [progresso](.specs/novo/contas-bancarias/progresso.md) |
 | extrato | ✅ 7 regras, 3 dúvidas, contrato | ✅ 2 casos | ✅ aprovado (ADR-008, hash `fa8f9227d732`) | ✅ **migrado** — paridade 2/2; tela abre no mês e ordena por Data e Conta (500 no legado) — ver [progresso](.specs/novo/extrato/progresso.md) |
 | site (cadastro e login) | ✅ 9 regras, 6 dúvidas, contrato; 5 sondas reproduzíveis | n/a (HTML → API; ADR-009) + **E2E** no navegador (7) | ✅ aprovado (ADR-009, hash `af43e2de4789`) | ✅ **migrado** — cadastro/login/minha conta em Vue 3 (`web/`), na mesma origem do app; revisado por segurança — ver [progresso](.specs/novo/site/progresso.md) |
+| admin de bancos | ✅ 7 regras, 7 dúvidas, contrato; 2 sondas reproduzíveis | n/a (HTML → API; ADR-010) | 🟡 rascunho — aguardando aprovação (ADR-010) | ⚪ |
 | assinaturas | ⚪ | ⚪ | ⚪ | ⚪ |
 
 O passo a passo completo, com descobertas e lições, está no [diário de bordo](docs/diario-de-bordo.md).

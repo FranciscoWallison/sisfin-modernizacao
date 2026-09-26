@@ -957,6 +957,43 @@ Vue 3**.
 - DUV-CAT-004/007 e DUV-FLX-005;
 - módulos restantes: admin de bancos e assinaturas.
 
+## Etapa 24 — Módulo `admin-bancos`: levantamento e proposta · 26/09/2026
+
+**Objetivo:** o admin de bancos (Blade, sessão, gate `access-admin`). Sondas de navegador como as do site
+(`tools/sondas/admin-bancos-legado.mjs` e `admin-auth-legado.mjs`, com upload multipart).
+
+- **1ª rodada: tudo 500.** Antes de concluir, fui ao log: "View [admin.banks.index] not found". O diretório versionado
+  é `views/Admin` (A maiúsculo) e o código pede `admin.`. No Windows/macOS do autor funciona; **em Linux, o admin
+  inteiro dá 500** (RN-ADB-001). Isso é fato do legado.
+  - Para sondar a regra **pretendida**, a imagem do oráculo ganhou o link `views/admin → Admin`, que emula o ambiente
+    do autor sem tocar em `legacy/`. Está documentado no Dockerfile e na regra.
+- **Achados, já com o link:**
+  - **Criar e editar banco nunca funcionaram:** `BankCreateRequest` e `BankUpdateRequest` **não existem**. Os bancos
+    vêm só do seeder. Se funcionasse, editar um banco com o logo padrão sobrescreveria o `default.jpg` de todos.
+  - Excluir: sem uso → apagado; em uso → 500 (FK).
+  - **`/admin/register` é público** e cria usuários sem cliente (`Auth::routes()` dentro do prefixo `/admin`).
+  - **Recuperação de senha:** o e-mail sai, mas o link vai sem `/admin` → **404**. Só funciona se a pessoa corrigir a
+    URL à mão.
+- **Tropeços da sonda (registrados para não repetir):**
+  - token CSRF procurado numa página sem formulário (a listagem exclui por componente Vue);
+  - a página de recuperação é só para visitante, então a sonda logada não achava formulário;
+  - bancos de teste que a sonda deixou no oráculo foram removidos **pela rota de exclusão do próprio admin**.
+- **Paridade antiga ficou frágil:** o RN-CBA-001 falhou 1 vez em 3 no legado. Não era regressão: o cliente 1 do
+  oráculo acumulou **110** contas bancárias ao longo das rodadas, e o caso procurava a conta recém-criada numa lista
+  de `limit=100` em ordem crescente. Passou a ordenar por id decrescente. Os outros casos usam a conta mais antiga,
+  que é estável.
+- **TO-BE em rascunho:**
+  - REQ-ADB-01..07;
+  - **ADR-010 (proposto)**: API `/api/admin/banks` só para admin; criar e editar **pela primeira vez**, com upload
+    validado pelo conteúdo (PNG/JPEG/WebP, 1 MB), nome aleatório, nunca sobrescrever; logos num volume servido pelo
+    nginx da `:8083` no mesmo caminho do legado, com imagem padrão; excluir em uso → 422; cadastro público do admin e
+    recuperação quebrada **não migrados**;
+  - design;
+  - tasks A01–A06.
+
+**Próximo passo:** Francisco decide as DUV-ADB-001..006 (ADR-010) e aprova com
+`node tools/aprovar-tasks.mjs admin-bancos "Francisco"`.
+
 ---
 
 ## Lições até aqui
@@ -997,3 +1034,7 @@ Vue 3**.
     do Chrome; o E2E versionado, com perfil limpo, é melhor evidência — roda de novo, na CI, e com a CSP ativa.
 24. **Toda tela nova passa a ser um contrato duplo:** o do legado (mensagens, campos) e o do app antigo com quem ela
     divide a origem (chaves do localStorage, rota de entrada `#!/dashboard`).
+25. **"Tudo dá 500" merece uma olhada no log antes de virar achado.** A primeira causa era o ambiente (maiúsculas no
+    caminho das views) — que também é fato do legado em produção Linux, mas escondia as regras de verdade.
+26. **Sensor que depende do volume de dados envelhece.** Um caso que procurava o registro novo numa lista limitada
+    passou a falhar depois de dezenas de rodadas; a ordenação decrescente o tornou independente do acúmulo.

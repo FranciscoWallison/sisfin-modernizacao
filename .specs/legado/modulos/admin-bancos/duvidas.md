@@ -1,0 +1,11 @@
+# Dúvidas — módulo `admin-bancos`
+
+| ID | Dúvida | Evidência | Proposta | Quem responde | Status |
+|---|---|---|---|---|---|
+| DUV-ADB-001 | Criar e editar banco nunca funcionaram (RN-ADB-003). Implementar a funcionalidade **pretendida** no novo? | RN-ADB-003 | **Sim**: é a única forma de manter a lista de bancos sem mexer no banco de dados à mão. Nome + logo, só para admin | Francisco | ⏳ decidir no gate (ADR-010) |
+| DUV-ADB-002 | Onde ficam os logos no sistema novo? | RN-ADB-007 | Um **volume próprio** gravado pela API e servido pelo nginx da `:8083` em `/storage/banks/imagens/` (o mesmo caminho do legado); `ASSETS_URL` passa a apontar para a `:8083`. Os arquivos existentes são copiados no cutover (`tools/migrar-logos.mjs`) | Francisco | ⏳ decidir no gate (ADR-010) |
+| DUV-ADB-003 | Regras do upload (o legado não validava nada)? | RN-ADB-003 | Só PNG, JPEG ou WebP, **verificados pelo conteúdo** (assinatura do arquivo, não a extensão), até 1 MB; nome gerado aleatório; **nunca** sobrescrever o `default.jpg` nem o arquivo de outro banco (corrige o bug latente); o arquivo antigo é apagado quando o banco troca de logo | Francisco | ⏳ decidir no gate (ADR-010) |
+| DUV-ADB-004 | Excluir banco em uso → 500 (FK) | RN-ADB-004 | 422 `{"message":"Bank has bank accounts."}` e nada apagado | Francisco | ⏳ decidir no gate (ADR-010) |
+| DUV-ADB-005 | Migrar o `/admin/register` público? | RN-ADB-005 | **Não**: só cria usuários sem cliente, que não servem para nada e são exatamente o caso da RN-CON-019 | Francisco | ⏳ decidir no gate (ADR-010) |
+| DUV-ADB-006 | Migrar a recuperação de senha, que nunca se completa pelo link do e-mail? | RN-ADB-006 | **Não agora**: pela interface ela não funciona hoje. Recuperação de verdade (e-mail real, token de uso único com validade, sem revelar se o e-mail existe) é **funcionalidade de produto** para o site inteiro — proposta separada | Francisco | ⏳ decidir no gate (ADR-010) |
+| DUV-ADB-007 | Como o admin entra no novo? | RN-ADB-002 | Pelo mesmo login do site (`/login`, API `access_token`): com `role = admin`, a tela oferece o admin de bancos. As rotas de admin da API exigem `role = admin` (403 para os outros) | — | ✅ consequência do ADR-009 (login único por JWT) |

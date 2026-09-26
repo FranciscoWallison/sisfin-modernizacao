@@ -24,6 +24,10 @@ RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-in
 COPY legacy/ ./
 # Seeder determinístico mora fora de legacy/ (o oráculo não é editado)
 COPY docker/legacy/seeds/DeterministicSeeder.php database/seeds/
+# O código chama view('admin.banks.*'), mas o diretório versionado é resources/views/Admin (A maiúsculo): no
+# Windows/macOS do autor funciona; em Linux (case-sensitive) TODO o admin de bancos dá 500 — RN-ADB-001. O link emula
+# o ambiente do autor para sondar a regra de negócio pretendida; a regra registra os dois comportamentos.
+RUN ln -s Admin resources/views/admin
 RUN composer dump-autoload --optimize --no-dev \
  && chown -R www-data:www-data storage bootstrap/cache
 

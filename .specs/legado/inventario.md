@@ -19,7 +19,7 @@
 | contas | `Api\BillPaysController`, `Api\BillReceivesController`, `BillControllerTrait` | `.specs/legado/modulos/contas/` | ✅ migrado (`api/src/modules/contas`) |
 | categorias | `Api\CategoryExpensesController`, `Api\CategoryRevenuesController` | `.specs/legado/modulos/categorias/` | ✅ migrado (`api/src/modules/categorias`) |
 | contas-bancarias | `Api\BankAccountsController` | `.specs/legado/modulos/contas-bancarias/` | ✅ escrita migrada (`api/src/modules/contas-bancarias`); leitura no compat |
-| bancos | `Admin\BanksController`, `Api\BanksController` | `Api`: em `contas-bancarias` (RN-CBA-007) | ✅ `GET /api/banks` migrado; admin ⚪ |
+| bancos | `Admin\BanksController`, `Api\BanksController` | `Api`: em `contas-bancarias` (RN-CBA-007); `Admin`: `.specs/legado/modulos/admin-bancos/` | ✅ `GET /api/banks` migrado; admin 🟡 AS-IS + TO-BE proposto (ADR-010) |
 | extrato | `Api\StatementsController` | `.specs/legado/modulos/extrato/` | ✅ migrado (`api/src/modules/extrato`) |
 | fluxo-de-caixa | `Api\CashFlowsController` | `.specs/legado/modulos/fluxo-de-caixa/` | ✅ migrado (`api/src/modules/fluxo-de-caixa`) |
 | assinaturas | `Site\SubscriptionsController`, `Api\IuguController`, `app/Iugu/*` | — | ⚪ |

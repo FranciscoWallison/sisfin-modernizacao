@@ -4,7 +4,7 @@
     "RN-CBA-002",
     "RN-CBA-006"
   ],
-  "descricao": "Criar/editar conta bancária; no máximo UMA padrão por cliente (marcar uma desmarca a anterior; desmarcar deixa nenhuma); outro cliente não lê, não edita nem exclui.",
+  "descricao": "Criar/editar conta bancária; no máximo UMA padrão por cliente (marcar uma desmarca a anterior; desmarcar deixa nenhuma); outro cliente não lê, não edita nem exclui. Listas em ordem de id DECRESCENTE: com o acúmulo de rodadas o cliente passa de 100 contas, e a recém-criada precisa estar na página.",
   "usuarios": {
     "padrao": {
       "email": "cliente1@user.com",
@@ -19,7 +19,7 @@
     {
       "nome": "padroes_de_b_antes",
       "usuario": "outro_cliente",
-      "rota": "/api/bank_accounts?limit=100",
+      "rota": "/api/bank_accounts?orderBy=id&sortedBy=desc&limit=100",
       "salvar": {
         "b_antes": "data"
       },
@@ -50,7 +50,7 @@
     },
     {
       "nome": "lista_1",
-      "rota": "/api/bank_accounts?limit=100",
+      "rota": "/api/bank_accounts?orderBy=id&sortedBy=desc&limit=100",
       "salvar": {
         "l1": "data"
       },
@@ -73,7 +73,7 @@
     },
     {
       "nome": "lista_2",
-      "rota": "/api/bank_accounts?limit=100",
+      "rota": "/api/bank_accounts?orderBy=id&sortedBy=desc&limit=100",
       "salvar": {
         "l2": "data"
       },
@@ -97,7 +97,7 @@
     },
     {
       "nome": "lista_3",
-      "rota": "/api/bank_accounts?limit=100",
+      "rota": "/api/bank_accounts?orderBy=id&sortedBy=desc&limit=100",
       "salvar": {
         "l3": "data"
       },
@@ -139,7 +139,7 @@
     {
       "nome": "padroes_de_b_depois",
       "usuario": "outro_cliente",
-      "rota": "/api/bank_accounts?limit=100",
+      "rota": "/api/bank_accounts?orderBy=id&sortedBy=desc&limit=100",
       "salvar": {
         "b_depois": "data"
       },

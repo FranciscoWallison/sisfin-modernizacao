@@ -54,6 +54,8 @@ servida duas vezes: só muda a API por trás. É o *Strangler Fig* visível.
 | Endereço | O quê |
 |---|---|
 | http://localhost:8082/app#!/login | **Versão antiga** — tela → API Laravel 5.3 (:8081) · selo vermelho |
+| http://localhost:8082/admin/login | Admin do **legado** (`admin@user.com` / `secret`) — o site Laravel sai pela mesma origem do app, como no deploy original |
+| http://localhost:8083/login | Site **novo** — com `admin@user.com`, "Minha conta" → "Administração de bancos" |
 | http://localhost:8083/app#!/login | **Versão nova** — mesma tela → API NestJS (:3300) · selo verde |
 | http://localhost:3300/health | API nova |
 

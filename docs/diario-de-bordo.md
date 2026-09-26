@@ -1118,6 +1118,22 @@ Vue 3**.
 - ligar o gate e boleto/Pix são decisões de produto;
 - as anteriores: RN-CAT-001 no oráculo local, ETL relatar nomes de banco com `< > " '`, CSP do `/app`, `trust proxy`.
 
+## Etapa 28 — Ambiente: a versão antiga (:8082) ganha o site do legado · 26/09/2026
+
+**Relato do Francisco:** no app antigo (`:8082`), o menu "minha conta" abria
+`http://localhost:8082/my-financial?token=…` e dava erro, e ele não achava como entrar no admin.
+
+- **Causa (ambiente, não regra):** o menu monta o link com caminho **relativo** (`Menu.vue:121`). No deploy original, app
+  e site Laravel eram a mesma origem; aqui a `:8082` servia **só** o app compilado → 404. Na `:8081` o mesmo link
+  responde "oi" (RN-SIT-002 — a página nunca teve conteúdo).
+- **O admin não é essa página:** o do legado é `/admin/login` (`admin@user.com` / `secret`); o do novo, "Minha conta" →
+  "Administração de bancos" na `:8083`.
+- **Correção de ambiente:** a `:8082` passa a encaminhar ao Laravel do oráculo tudo que não é o app (`/login`,
+  `/my-financial`, `/admin/…`), com o `Host` da própria `:8082` (os redirecionamentos ficam nela), e o log **sem a query
+  string** — o link leva o JWT, mesmo cuidado já aplicado na `:8083`.
+- **Conferido:** `/my-financial?token=…` → 200 "oi"; `/admin/login` → login → `/admin/home` → lista de bancos; nenhum
+  `token=` no log do nginx. O CI não sobe a `:8082`: paridade e espelho não mudam.
+
 ---
 
 ## Lições até aqui

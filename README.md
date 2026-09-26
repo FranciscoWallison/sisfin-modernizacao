@@ -97,7 +97,7 @@ Os casos (`.specs/paridade/<modulo>/*.json`) só falam HTTP: criam os próprios 
 | extrato | ✅ 7 regras, 3 dúvidas, contrato | ✅ 2 casos | ✅ aprovado (ADR-008, hash `fa8f9227d732`) | ✅ **migrado** — paridade 2/2; tela abre no mês e ordena por Data e Conta (500 no legado) — ver [progresso](.specs/novo/extrato/progresso.md) |
 | site (cadastro e login) | ✅ 9 regras, 6 dúvidas, contrato; 5 sondas reproduzíveis | n/a (HTML → API; ADR-009) + **E2E** no navegador (7) | ✅ aprovado (ADR-009, hash `af43e2de4789`) | ✅ **migrado** — cadastro/login/minha conta em Vue 3 (`web/`), na mesma origem do app; revisado por segurança — ver [progresso](.specs/novo/site/progresso.md) |
 | admin de bancos | ✅ 7 regras, 7 dúvidas, contrato; 2 sondas reproduzíveis | n/a (HTML → API; ADR-010) + **E2E** no navegador (4) | ✅ aprovado (ADR-010, hash `bb0f9a303b2e`) | ✅ **migrado** — criar e editar funcionam pela 1ª vez (no legado, sempre 500), upload validado pelo conteúdo, logos num volume servido pela `:8083`; revisado por segurança — ver [progresso](.specs/novo/admin-bancos/progresso.md) |
-| assinaturas | ⚪ | ⚪ | ⚪ | ⚪ |
+| assinaturas (Iugu → Stripe) | ✅ 9 regras, 10 dúvidas, contrato; 1 sonda reproduzível | n/a (HTML + provedor externo; ADR-011) | 🟡 rascunho — aguardando aprovação (ADR-011) | ⚪ |
 
 O passo a passo completo, com descobertas e lições, está no [diário de bordo](docs/diario-de-bordo.md).
 

@@ -22,7 +22,7 @@
 | bancos | `Admin\BanksController`, `Api\BanksController` | `Api`: em `contas-bancarias` (RN-CBA-007); `Admin`: `.specs/legado/modulos/admin-bancos/` | ✅ `GET /api/banks` migrado; ✅ admin migrado (`api/src/modules/admin-bancos` + `web/`, ADR-010) |
 | extrato | `Api\StatementsController` | `.specs/legado/modulos/extrato/` | ✅ migrado (`api/src/modules/extrato`) |
 | fluxo-de-caixa | `Api\CashFlowsController` | `.specs/legado/modulos/fluxo-de-caixa/` | ✅ migrado (`api/src/modules/fluxo-de-caixa`) |
-| assinaturas | `Site\SubscriptionsController`, `Api\IuguController`, `app/Iugu/*` | — | ⚪ |
+| assinaturas | `Site\SubscriptionsController`, `Api\IuguController`, `app/Iugu/*` | `.specs/legado/modulos/assinaturas/` | 🟡 AS-IS + TO-BE proposto (Stripe no lugar da Iugu, ADR-011) |
 | auth | `Api\AuthController`, `Auth\*`, `app/Jwt` | RN-AUT-* (em `contas`) | ✅ API de login/refresh/logout migrada (auth-compat, ADR-005) |
 | site (cadastro, login, convite) | `Site\Auth\*`, `Site\SubscriptionsController@invite*`, middleware `auth.from_token` | `.specs/legado/modulos/site/` | ✅ migrado: `POST /api/register` (`api/src/modules/cadastro`) + telas Vue 3 (`web/`); convite não migrado (ADR-009) |
 

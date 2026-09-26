@@ -1045,6 +1045,36 @@ Vue 3**.
 - CSP do `/app`, `trust proxy`, confirmação de e-mail; DUV-CAT-004/007 e DUV-FLX-005;
 - módulo restante: assinaturas (Iugu) — decidir entre sandbox da Iugu e simulador.
 
+## Etapa 26 — Módulo `assinaturas`: levantamento e proposta (Stripe no lugar da Iugu) · 26/09/2026
+
+**Decisão de Francisco:** trocar a Iugu pelo **Stripe** (conversa antes do levantamento: Stripe × Asaas × Mercado Pago
+× simulador; o Stripe venceu pelo modo de teste sem burocracia e pelo Stripe CLI, que leva webhooks ao `localhost`).
+
+- **O oráculo não tem conta na Iugu** (`IUGU_API_KEY` vazia): criar assinatura e os webhooks que consultam a Iugu dão
+  500. Antes de registrar, o `laravel.log` confirmou a causa (`IuguAuthenticationException`), como na lição 25. O
+  caminho feliz saiu do código, e cada regra diz se veio da sonda ou do código
+  (`tools/sondas/assinaturas-legado.mjs`).
+- **Achados — a cobrança nunca operou:**
+  - o front tem o **modo de teste da Iugu fixo**, um id de conta de exemplo e um cartão de teste pré-preenchido;
+  - o gate `check-subscription` não está em nenhuma rota (já visto no site, RN-SIT-003): ninguém paga para usar;
+  - o **webhook é público** e marca como paga uma fatura pelo id **sem conferir** o status devolvido pela Iugu — o
+    cliente vê o id na URL do próprio boleto;
+  - criar assinatura não é transação e **permite assinar duas vezes**; a assinatura é do usuário, mas o gate procura
+    pelo cliente;
+  - cancelar existe no código e nada o chama; uma rota pública de teste dispara o e-mail de "assinatura ativa".
+- **TO-BE em rascunho:**
+  - REQ-ASS-01..07;
+  - **ADR-011 (proposto):** porta `GatewayDePagamento` com adaptadores **Stripe** e **simulador** (testes, CI e E2E sem
+    internet nem chave); **Stripe Checkout** e **portal do cliente** hospedados (o cartão nunca passa por nós); só
+    cartão nesta etapa; uma assinatura viva por **cliente**; webhook com **assinatura verificada** e idempotência;
+    gate com os corpos do legado, **desligado por padrão** (ligar derruba todos os clientes de hoje); nenhuma chave no
+    repositório público;
+  - design e tasks P01–P07 (a P07 é o roteiro com o Stripe real, usando as chaves de teste do Francisco).
+- SDK conferido no npm antes de entrar no design: `stripe` 22.6.2.
+
+**Próximo passo:** Francisco decide as DUV-ASS-002..010 (ADR-011) e aprova com
+`node tools/aprovar-tasks.mjs assinaturas "Francisco"`.
+
 ---
 
 ## Lições até aqui
